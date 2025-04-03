@@ -1,39 +1,43 @@
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 const QuestionBlock = ({ item, onUpdate, isDragging }) => {
-  const renderOptions = () => {
+  const handleOptionChange = useCallback((index, value) => {
+    const newOptions = [...item.options];
+    newOptions[index] = value;
+    onUpdate({ options: newOptions });
+  }, [item.options, onUpdate]);
+
+  const handleAddOption = useCallback(() => {
+    onUpdate({ options: [...item.options, `Option ${item.options.length + 1}`] });
+  }, [item.options, onUpdate]);
+
+  const options = useMemo(() => {
     if (!item.options) return null;
     
     return (
       <div className="options-container">
         {item.options.map((option, i) => (
-          <label key={i} className="option-item">
-            {item.template === 'multipleChoice' ? (
-              <input type="radio" name={`question-${item.id}`} />
-            ) : (
-              <input type="checkbox" name={`question-${item.id}`} />
-            )}
+          <label key={`${item.id}-${i}`} className="option-item">
+            <input 
+              type={item.template === 'multipleChoice' ? 'radio' : 'checkbox'} 
+              name={`question-${item.id}`} 
+            />
             <input
               type="text"
               value={option}
-              onChange={(e) => {
-                const newOptions = [...item.options];
-                newOptions[i] = e.target.value;
-                onUpdate({ options: newOptions });
-              }}
+              onChange={(e) => handleOptionChange(i, e.target.value)}
               className="option-input"
             />
           </label>
         ))}
-        <button
-          onClick={() => onUpdate({ options: [...item.options, `Option ${item.options.length + 1}`] })}
-          className="add-option-btn"
-        >
+        <button onClick={handleAddOption} className="add-option-btn">
           Add Option
         </button>
       </div>
     );
-  };
+  }, [item.options, item.id, item.template, handleOptionChange, handleAddOption]);
+
+  
 
   return (
     <div className={`question-block ${isDragging ? 'dragging' : ''}`} data-id={item.id}>
@@ -48,29 +52,7 @@ const QuestionBlock = ({ item, onUpdate, isDragging }) => {
         onChange={(e) => onUpdate({ text: e.target.value })}
         className="question-text-input"
       />
-      {renderOptions()}
-    </div>
-  );
-};
-
-const ScheduleBlock = ({ item, onUpdate, isDragging }) => {
-  return (
-    <div className={`schedule-block ${isDragging ? 'dragging' : ''}`} data-id={item.id}>
-      <div className="schedule-header">
-        <select value={item.day} onChange={(e) => onUpdate({ day: e.target.value })}>
-          {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
-            <option key={day} value={day}>{day}</option>
-          ))}
-        </select>
-        <input
-          type="time"
-          value={item.time}
-          onChange={(e) => onUpdate({ time: e.target.value })}
-        />
-      </div>
-      <div className="schedule-content">
-        {/* Questions will be rendered here based on parentId */}
-      </div>
+      {options}
     </div>
   );
 };
@@ -78,20 +60,19 @@ const ScheduleBlock = ({ item, onUpdate, isDragging }) => {
 const TestEditor = () => {
   const [items, setItems] = useState([
     { id: 1, type: 'question', template: 'text', title: 'Question 1', text: 'Please enter your name', schedule: { day: 'Monday', time: '09:00' } },
-    { id: 2, type: 'schedule', day: 'Tuesday', time: '10:30' },
     { id: 3, type: 'question', template: 'multipleChoice', title: 'Multiple Choice Question', text: 'Select one option:', options: ['Option 1', 'Option 2'], schedule: { day: 'Tuesday', time: '10:30' } },
   ]);
 
   const [draggedItem, setDraggedItem] = useState(null);
   const [activeItem, setActiveItem] = useState(null);
 
-  const handleDragStart = (e, item) => {
+  const handleDragStart = useCallback((e, item) => {
     setDraggedItem(item);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/html', item.id);
-  };
+  }, []);
 
-  const handleDragOver = (e, index) => {
+  const handleDragOver = useCallback((e, index) => {
     e.preventDefault();
     if (!draggedItem || draggedItem.id === items[index].id) return;
 
@@ -102,13 +83,13 @@ const TestEditor = () => {
       newItems.splice(index, 0, draggedItem);
       return newItems;
     });
-  };
+  }, [draggedItem, items]);
 
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
     setDraggedItem(null);
-  };
+  }, []);
 
-  const addQuestion = (templateType) => {
+  const addQuestion = useCallback((templateType) => {
     const newId = Math.max(...items.map(i => i.id), 0) + 1;
     const newItem = {
       id: newId,
@@ -117,27 +98,97 @@ const TestEditor = () => {
       title: `New ${templateType} Question`,
       text: 'Question text goes here',
       ...(templateType === 'multipleChoice' && { options: ['Option 1', 'Option 2'] }),
-      schedule: { day: 'Unassigned', time: '00:00' }
     };
-    setItems([...items, newItem]);
+    setItems(prev => [...prev, newItem]);
     setActiveItem(newItem);
-  };
+  }, [items]);
 
-  const addScheduleBlock = () => {
-    const newId = Math.max(...items.map(i => i.id), 0) + 1;
-    const newItem = {
-      id: newId,
-      type: 'schedule',
-      day: 'New Day',
-      time: '00:00'
+  const updateItem = useCallback((id, updates) => {
+    setItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
+  }, []);
+
+  const renderedItems = useMemo(() => (
+    items.map((item, index) => {
+      const isDragging = draggedItem?.id === item.id;
+      return (
+        <div
+          key={item.id}
+          className={`editor-block ${item.type} ${activeItem?.id === item.id ? 'active' : ''}`}
+          draggable
+          onDragStart={(e) => handleDragStart(e, item)}
+          onDragOver={(e) => handleDragOver(e, index)}
+          onDragEnd={handleDragEnd}
+          onClick={() => setActiveItem(item)}
+          style={{ opacity: isDragging ? 0.5 : 1 }}
+        >
+          <div className="drag-handle">≡</div>
+          {item.type === 'question' ? (
+            <QuestionBlock 
+              item={item} 
+              onUpdate={(updates) => updateItem(item.id, updates)}
+              isDragging={isDragging}
+            />
+          ) : (
+           <div>null</div>
+          )}
+        </div>
+      );
+    })
+  ), [items, draggedItem, activeItem, handleDragStart, handleDragOver, handleDragEnd, updateItem]);
+
+
+  ////////////////////////////generating file json/////////////////////////////////////////////////////////////////
+  const generateTestJson = useCallback(() => {
+    const testStructure = {
+      test: {
+        blocks: items.map(item => {
+          const block = {
+            questions: [],
+            answers: [] // You'll need to implement answer handling
+          };
+
+          if (item.type === 'question') {
+            const question = {
+              type: item.template,
+              text: item.text || item.title,
+              ...(item.options && { choices: item.options })
+            };
+            block.questions.push(question);
+
+            // This is a placeholder - you'll need to implement actual answer handling
+            if (item.template === 'multipleChoice' && item.options?.length) {
+              block.answers.push({
+                type: 'choice',
+                text: item.options[0], // Assuming first option is correct
+                isCorrect: true
+              });
+            } else if (item.template === 'text') {
+              block.answers.push({
+                type: 'text',
+                text: '', // You'll want to add actual correct answers
+                isCorrect: true
+              });
+            }
+          }
+
+          return block;
+        })
+      }
     };
-    setItems([...items, newItem]);
-    setActiveItem(newItem);
-  };
 
-  const updateItem = (id, updates) => {
-    setItems(items.map(item => item.id === id ? { ...item, ...updates } : item));
-  };
+    // Create a JSON string and download it as a file
+    const jsonStr = JSON.stringify(testStructure, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'test-structure.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    ////////////////////////////////////////////////impport jsone file///////////////////////////////
+  }, [items])
 
   return (
     <div className="test-editor">
@@ -147,42 +198,16 @@ const TestEditor = () => {
           <button onClick={() => addQuestion('text')}>Add Text Question</button>
           <button onClick={() => addQuestion('multipleChoice')}>Add Multiple Choice</button>
           <button onClick={() => addQuestion('checkbox')}>Add Checkbox</button>
-          <button onClick={addScheduleBlock}>Add Schedule Block</button>
+
+          <button onClick={generateTestJson} className="export-btn">
+            Export Test JSON
+          </button>
         </div>
       </div>
 
       <div className="editor-container">
         <div className="editing-area" onDragOver={(e) => e.preventDefault()}>
-          {items.map((item, index) => {
-            const isDragging = draggedItem?.id === item.id;
-            return (
-              <div
-                key={item.id}
-                className={`editor-block ${item.type} ${activeItem?.id === item.id ? 'active' : ''}`}
-                draggable
-                onDragStart={(e) => handleDragStart(e, item)}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDragEnd={handleDragEnd}
-                onClick={() => setActiveItem(item)}
-                style={{ opacity: isDragging ? 0.5 : 1 }}
-              >
-                <div className="drag-handle">≡</div>
-                {item.type === 'question' ? (
-                  <QuestionBlock 
-                    item={item} 
-                    onUpdate={(updates) => updateItem(item.id, updates)}
-                    isDragging={isDragging}
-                  />
-                ) : (
-                  <ScheduleBlock 
-                    item={item} 
-                    onUpdate={(updates) => updateItem(item.id, updates)}
-                    isDragging={isDragging}
-                  />
-                )}
-              </div>
-            );
-          })}
+          {renderedItems}
         </div>
       </div>
 
@@ -271,19 +296,6 @@ const TestEditor = () => {
 
         .add-option-btn {
           margin-top: 5px;
-        }
-
-        .schedule-header {
-          display: flex;
-          gap: 10px;
-          margin-left: 20px;
-        }
-
-        .schedule-content {
-          margin-top: 15px;
-          padding: 10px;
-          background: #f5f5f5;
-          border-radius: 4px;
         }
       `}</style>
     </div>
