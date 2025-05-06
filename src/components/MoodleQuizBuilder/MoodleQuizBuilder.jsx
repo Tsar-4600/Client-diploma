@@ -9,6 +9,7 @@ const MoodleQuizBuilder = () => {
     fetch('http://localhost:5000/api/questions')
       .then(response => response.json())
       .then(data => {
+    
         setSampleQuestions(data);
       })
       .catch(error => console.error('Ошибка при получении вопросов:', error));
