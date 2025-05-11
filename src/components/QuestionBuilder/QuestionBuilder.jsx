@@ -110,7 +110,7 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
     e.preventDefault();
     try {
       
-      const response = await fetch('http://localhost:5000/api/my-questions/create', {
+      const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/my-questions/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('jwtToken')}` },
         body: JSON.stringify({ ...question }),
@@ -331,7 +331,6 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
 
   return (
     <div className="container">
-      <h2 className="header">Создание вопроса Moodle</h2>
       <form onSubmit={handleSubmit} className="form">
         {/* Тип вопроса */}
         <div className="section">

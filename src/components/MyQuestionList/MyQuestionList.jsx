@@ -12,7 +12,7 @@ const MyQuestionList = ({ refreshTrigger }) => {
 
 
 
-      const response = await fetch('http://localhost:5000/api/my-questions', {
+      const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/my-questions`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
@@ -35,7 +35,7 @@ const MyQuestionList = ({ refreshTrigger }) => {
   // Функция для удаления вопроса
   const deleteQuestion = async (questionId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/my-questions/${questionId}`, {
+      const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/my-questions/${questionId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`

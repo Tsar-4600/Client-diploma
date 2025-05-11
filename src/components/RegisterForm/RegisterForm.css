@@ -1,4 +1,5 @@
-.auth-form {
+/* Основные цвета */
+.reg-form {
   --primary-blue: #1e88e5;
   --dark-blue: #0d47a1;
   --light-blue: #bbdefb;
@@ -22,7 +23,7 @@
 }
 
 /* Контейнер формы */
-.auth-form {
+.reg-form {
   max-width: 400px;
   margin: 2rem auto;
   padding: 2rem;
@@ -33,12 +34,12 @@
 }
 
 /* Группы полей ввода */
-.auth-form div {
+.reg-form div {
   margin-bottom: 1.2rem;
 }
 
 /* Стили для label */
-.auth-form label {
+.reg-form label {
   display: block;
   margin-bottom: 0.5rem;
   color: var(--dark-blue);
@@ -47,7 +48,7 @@
 }
 
 /* Стили для input */
-.auth-form input {
+.reg-form input {
   width: 100%;
   padding: 0.8rem;
   border: 2px solid var(--light-blue);
@@ -56,14 +57,14 @@
   transition: all 0.3s ease;
 }
 
-.auth-form input:focus {
+.reg-form input:focus {
   border-color: var(--accent-blue);
   outline: none;
   box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.2);
 }
 
 /* Стили для кнопки */
-.auth-form button {
+.reg-form button {
   width: 100%;
   padding: 0.8rem;
   background-color: var(--primary-blue);
@@ -77,17 +78,17 @@
   margin-top: 0.5rem;
 }
 
-.auth-form button:hover {
+.reg-form button:hover {
   background-color: var(--dark-blue);
   transform: translateY(-2px);
 }
 
-.auth-form button:active {
+.reg-form button:active {
   transform: translateY(0);
 }
 
 /* Сообщение формы */
-.auth-form p {
+.reg-form p {
   margin-top: 1rem;
   padding: 0.8rem;
   border-radius: 6px;
@@ -96,23 +97,20 @@
 }
 
 /* Стили для сообщения об ошибке */
-.auth-form .error-message {
+.reg-form .error-message {
   background-color: rgba(244, 67, 54, 0.1);
   color: var(--error-red);
   border: 1px solid var(--error-red);
 }
 
 /* Стили для успешного сообщения */
-.auth-form .success-message {
+.reg-form .success-message {
   background-color: rgba(76, 175, 80, 0.1);
   color: var(--success-green);
   border: 1px solid var(--success-green);
 }
 
 /* Анимация при ошибке */
-.auth-form .shake-animation {
+.reg-form .shake-animation {
   animation: shake 0.4s ease-in-out;
-}
-h1{
-    text-align: center;
 }

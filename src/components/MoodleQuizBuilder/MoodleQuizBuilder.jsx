@@ -6,7 +6,7 @@ const MoodleQuizBuilder = () => {
   const [sampleQuestions, setSampleQuestions] = useState([]);
   useEffect(() => {
     // Запрос на получение вопросов
-    fetch('http://localhost:5000/api/questions')
+    fetch(`${process.env.REACT_APP_SERVER_URL}/api/questions`)
       .then(response => response.json())
       .then(data => {
     

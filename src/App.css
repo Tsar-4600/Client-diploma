@@ -1,4 +1,38 @@
+/* Глобальные сбросы и базовые стили */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html, body {
+  height: 100%;
+  width: 100%;
+  font-family: sans-serif;
+}
 
+/* Основные цвета синей палитры */
+:root {
+  --blue-50: #e3f2fd;
+  --blue-100: #bbdefb;
+  --blue-200: #90caf9;
+  --blue-300: #64b5f6;
+  --blue-400: #42a5f5;
+  --blue-500: #2196f3; /* Основной синий */
+  --blue-600: #1e88e5;
+  --blue-700: #1976d2;
+  --blue-800: #1565c0;
+  --blue-900: #0d47a1; /* Темно-синий */
+}
+
+/* Обеспечиваем, что весь документ занимает всю высоту и ширину */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Анимация логотипа (оставляем как было) */
 .App-logo {
   height: 40vmin;
   pointer-events: none;
@@ -10,21 +44,6 @@
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
@@ -33,19 +52,53 @@
     transform: rotate(360deg);
   }
 }
-/* CUSTOM STYLES HEADER */
-/* Основной контейнер */
+
+/* Шапка приложения */
+.App-header {
+  background-color: var(--blue-900);
+  width: 100%;
+  min-height: 100vh; /* занимает всю высоту */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+/* Ссылка */
+.App-link {
+  color: var(--blue-200);
+}
+
+/* Контейнер приложения: растягиваем на всю доступную площадь */
 .app-container {
   display: flex;
+  flex: 1; /* занимает всё оставшееся пространство */
+  width: 100%;
   min-height: 100vh;
+  background-color: var(--blue-50);
 }
 
 /* Боковая панель */
 .sidebar {
   width: 250px;
-  background-color: #2c3e50;
+  background-color: var(--blue-800);
   padding: 20px 0;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0; /* чтобы не сжималась */
+}
+
+/* Основное содержимое */
+.content {
+  flex: 1;
+  padding: 30px;
+  background-color: white;
+  border-left: 1px solid var(--blue-100);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 /* Список меню */
@@ -65,7 +118,7 @@
 .menu-link {
   display: block;
   padding: 12px 15px;
-  color: #ecf0f1;
+  color: var(--blue-100);
   text-decoration: none;
   border-radius: 4px;
   transition: all 0.3s ease;
@@ -73,18 +126,57 @@
 }
 
 .menu-link:hover {
-  background-color: #34495e;
-  color: #ffffff;
-}
-
-.menu-link.active {
-  background-color: #3498db;
+  background-color: var(--blue-700);
   color: white;
 }
 
-/* Основное содержимое */
-.content {
-  flex: 1;
-  padding: 30px;
-  background-color: #f9f9f9;
+.menu-link.active {
+  background-color: var(--blue-500);
+  color: white;
+  font-weight: 500;
+}
+
+/* Кнопки */
+.button-primary {
+  background-color: var(--blue-500);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.button-primary:hover {
+  background-color: var(--blue-600);
+}
+
+/* Карточки */
+.card {
+  background-color: white;
+  border: 1px solid var(--blue-100);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+}
+
+/* Фон и заголовок страницы */
+.page-background {
+  background-color: var(--blue-50);
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: start; /* чтобы заголовок был по центру, а не по всей странице */
+  padding: 40px 20px;
+  box-sizing: border-box;
+}
+
+/* Заголовок страницы */
+.page-title {
+  color: white;
+  text-align: center;
+  font-size: 2.5em;
+  margin: 20px 0;
 }

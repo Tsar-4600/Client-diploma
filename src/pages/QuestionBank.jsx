@@ -16,10 +16,11 @@ const QuestionBank = () => {
   // Разметка, возвращаемая компонентом
   return (
     <div className="QuestionBank">
-        <h1>Создание моего вопроса</h1>
-        <QuestionBuilder onQuestionAdded={handleQuestionAdded} />
-        <h2>Мои вопросы</h2>
-        <MyQuestionList refreshTrigger={refreshTrigger}  />
+      <h2>Мои вопросы</h2>
+      <MyQuestionList refreshTrigger={refreshTrigger}  />
+      <h2>Создание моего вопроса</h2>
+      <QuestionBuilder onQuestionAdded={handleQuestionAdded} />
+        
        
     </div>
 

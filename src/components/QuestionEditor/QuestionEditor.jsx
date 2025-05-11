@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './QuestionBuilder.css'; // Используем те же стили
+import '../QuestionBuilder/QuestionBuilder.css'; // Используем те же стили
 
 const QuestionEditor = ({ questionData, onSave, onCancel }) => {
   const [formData, setFormData] = useState(questionData);

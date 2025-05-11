@@ -1,6 +1,8 @@
 // AuthForm.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './AuthForm.css';
+
 const AuthForm = ( { setIsAuthenticated }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -12,7 +14,7 @@ const AuthForm = ( { setIsAuthenticated }) => {
         event.preventDefault(); // предотвращаем перезагрузку страницы
         
         try {
-            const response = await fetch('http://localhost:5000/api/login', {
+            const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -43,7 +45,7 @@ const AuthForm = ( { setIsAuthenticated }) => {
     };
 
     return (
-        <div>
+        <div className='auth-form'>
             <form onSubmit={handleSubmit}>
                 <div>
                     <label>Имя пользователя:</label>

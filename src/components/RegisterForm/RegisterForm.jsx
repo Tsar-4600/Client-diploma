@@ -1,6 +1,6 @@
 // RegisterForm.js
 import React, { useState } from 'react';
-
+import './RegisterForm.css'
 const RegisterForm = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -11,7 +11,7 @@ const RegisterForm = () => {
         event.preventDefault(); // предотвращаем перезагрузку страницы
 
         try {
-            const response = await fetch('http://localhost:5000/api/register', { // URL для регистрации
+            const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/register`, { // URL для регистрации
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -36,7 +36,7 @@ const RegisterForm = () => {
     };
 
     return (
-        <div>
+        <div className='reg-form'>
             <form onSubmit={handleSubmit}>
                 <div>
                     <label>Имя пользователя:</label>

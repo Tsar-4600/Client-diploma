@@ -12,7 +12,6 @@ import QuestionBank from './pages/QuestionBank';
 
 
 function App() {
-
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true); // Для индикации загрузки/проверки токена
 
@@ -24,7 +23,7 @@ function App() {
           if (token) {
               // для валидации токена. 
               try {
-                  const response = await fetch('http://localhost:5000/api/validate-token', { 
+                  const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/validate-token`, { 
                       method: 'GET',
                       headers: {
                           'Authorization': `Bearer ${token}`,
@@ -114,7 +113,7 @@ function App() {
             </ul>
         </nav>
 
-        <div className="content">
+        <div className="page-background">
             <Routes>
                 <Route path="/" element={<Home />} />
 
