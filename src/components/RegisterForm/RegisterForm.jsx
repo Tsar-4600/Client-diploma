@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 const RegisterForm = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [email, setEmail] = useState(''); // Добавлено состояние для email
+    const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
 
     const handleSubmit = async (event) => {

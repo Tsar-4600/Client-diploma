@@ -1,4 +1,4 @@
-import MoodleQuizBuilder from '../components/MoodleQuizBuilder/MoodleQuizBuilder';
+
 import React from 'react';
 
 // Определение функционального компонента

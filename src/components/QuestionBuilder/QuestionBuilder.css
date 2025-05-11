@@ -1,0 +1,90 @@
+/* QuestionBuilder.css */
+
+.container {
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .form {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 5px;
+  }
+  
+  .section {
+    margin-bottom: 20px;
+  }
+  
+  .label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+  
+  .input {
+    padding: 8px;
+    width: 100%;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    box-sizing: border-box;
+  }
+  
+  .input-small {
+    width: 80px;
+  }
+  
+  .answerItem,
+  .pairItem {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  
+  .removeButton {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+  }
+  
+  .submitButton {
+    padding: 10px 20px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 100%;
+  }
+  
+  .serverResponse {
+    margin-top: 30px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f5f5f5;
+  }
+  
+  .serverResponsePre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: monospace;
+    line-height: 1.4;
+  }

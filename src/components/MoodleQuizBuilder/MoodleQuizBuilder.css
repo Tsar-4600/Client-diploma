@@ -65,8 +65,13 @@
   .question-bank-drop-area {
     border: 2px dashed #ccc;
     border-radius: 5px;
-    min-height: 200px;
-    padding: 10px;
+    padding: 5px;
+    height: 400px; /* Фиксированная высота */
+    overflow-y: auto; /* Вертикальный скролл */
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    gap: 5px; /* Отступ между вопросами */
   }
   
   /* Стили для выбранных вопросов */
