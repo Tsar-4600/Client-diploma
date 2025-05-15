@@ -7,7 +7,7 @@ const TestConstructor = () => {
   // Разметка, возвращаемая компонентом
   return (
     <div className="TestConstructor">
-        <h1>Тест конструктора</h1>
+        <h1>Конструктор теста</h1>
         <MoodleQuizBuilder/>
     </div>
 

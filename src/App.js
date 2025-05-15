@@ -8,6 +8,8 @@ import NotFound from './pages/NotFound';
 import Auth from './pages/Auth';
 import Register from './pages/Register';
 import QuestionBank from './pages/QuestionBank';
+import TestBank from './pages/TestBank';
+
 
 
 
@@ -87,6 +89,12 @@ function App() {
                     )}
                 </li>
                 <li className="menu-item">
+                    {/* Ссылка на конструктор видна только авторизованным */}
+                    {isAuthenticated && (
+                        <Link to="/test-bank" className="menu-link">Банк тестов</Link>
+                    )}
+                </li>
+                <li className="menu-item">
                     {/* Ссылка навидна только авторизованным */}
                     {isAuthenticated && (
                         <Link to="/question-bank" className="menu-link">Банк вопросов</Link>
@@ -122,7 +130,12 @@ function App() {
                     path="/test-constructor"
                     element={isAuthenticated ? <TestConstructor /> : <Navigate to="/auth" replace />}
                 />
-                  {/* Защищенный маршрут */}
+                   {/* Защищенный маршрут */}
+                <Route
+                    path="/test-bank"
+                    element={isAuthenticated ? <TestBank /> : <Navigate to="/auth" replace />}
+                />
+                {/* Защищенный маршрут */}
                 <Route
                     path="/question-bank"
                     element={isAuthenticated ? <QuestionBank /> : <Navigate to="/auth" replace />}

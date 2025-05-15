@@ -1,0 +1,288 @@
+:root {
+  --primary-color: #1a73e8;
+  --primary-light: #e8f0fe;
+  --primary-dark: #0d47a1;
+  --secondary-color: #4285f4;
+  --background-light: #f8fafc;
+  --text-color: #202124;
+  --text-light: #5f6368;
+  --white: #ffffff;
+}
+
+body {
+  font-family: 'Roboto', Arial, sans-serif;
+  color: var(--text-color);
+  line-height: 1.6;
+  background-color: var(--background-light);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Герой-секция */
+.hero-section {
+  text-align: center;
+  padding: 60px 20px;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: var(--white);
+  border-radius: 12px;
+  margin-bottom: 40px;
+}
+
+.title {
+  font-size: 2.8em;
+  margin-bottom: 15px;
+  font-weight: 500;
+}
+
+.subtitle {
+  font-size: 1.2em;
+  opacity: 0.9;
+}
+
+/* Секции с фичами */
+.feature-section {
+  margin: 60px 0;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.section-header h2 {
+  font-size: 2em;
+  color: var(--primary-dark);
+  margin-bottom: 15px;
+}
+
+.divider {
+  width: 80px;
+  height: 4px;
+  background: var(--primary-color);
+  margin: 0 auto;
+  border-radius: 2px;
+}
+
+.feature-content {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  margin-top: 30px;
+}
+
+.feature-content.reversed {
+  flex-direction: row-reverse;
+}
+
+.feature-image {
+  flex: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.feature-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.feature-description {
+  flex: 1;
+}
+
+.feature-description ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.feature-description li {
+  padding: 12px 0;
+  padding-left: 30px;
+  position: relative;
+  font-size: 1.1em;
+}
+
+.feature-description li:before {
+  content: "✓";
+  color: var(--primary-color);
+  position: absolute;
+  left: 0;
+  font-weight: bold;
+}
+
+/* Преимущества */
+.benefits-section {
+  background-color: var(--white);
+  padding: 60px 40px;
+  border-radius: 12px;
+  margin: 60px 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.benefits-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  list-style: none;
+  padding: 0;
+  margin-top: 40px;
+}
+
+.benefit-item {
+  background: var(--white);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s, box-shadow 0.3s;
+  text-align: center;
+  border-top: 4px solid var(--primary-color);
+}
+
+.benefit-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.icon {
+  font-size: 2.5em;
+  margin-bottom: 20px;
+  color: var(--primary-color);
+}
+
+.benefit-title {
+  font-size: 1.3em;
+  margin-bottom: 15px;
+  color: var(--primary-dark);
+}
+
+.benefit-description {
+  color: var(--text-light);
+  font-size: 1em;
+}
+
+/* Демо-секция */
+.demo-section {
+  text-align: center;
+  margin: 60px 0;
+}
+
+.demo-container img {
+  max-width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+/* CTA секция */
+.cta-section {
+  text-align: center;
+  padding: 60px 20px;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: var(--white);
+  border-radius: 12px;
+  margin: 60px 0;
+}
+
+.cta-section h2 {
+  font-size: 2.2em;
+  margin-bottom: 30px;
+}
+
+.buttons-container {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.primary-button {
+  padding: 16px 32px;
+  font-size: 1.1em;
+  background-color: var(--white);
+  color: var(--primary-color);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 500;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.primary-button:hover {
+  background-color: #f1f3f4;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.secondary-button {
+  padding: 16px 32px;
+  font-size: 1.1em;
+  background-color: transparent;
+  color: var(--white);
+  border: 2px solid var(--white);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 500;
+}
+
+.secondary-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Отзывы */
+.testimonials-section {
+  margin: 80px 0;
+}
+
+.testimonials-section h2 {
+  text-align: center;
+  margin-bottom: 40px;
+  color: var(--primary-dark);
+}
+
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+.testimonial-card {
+  background: var(--white);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  position: relative;
+  font-style: italic;
+  font-size: 1.1em;
+  border-left: 4px solid var(--primary-color);
+}
+
+.testimonial-card cite {
+  display: block;
+  margin-top: 15px;
+  font-style: normal;
+  font-weight: 500;
+  color: var(--primary-dark);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .feature-content, .feature-content.reversed {
+    flex-direction: column;
+  }
+  
+  .hero-section {
+    padding: 40px 20px;
+  }
+  
+  .title {
+    font-size: 2em;
+  }
+}

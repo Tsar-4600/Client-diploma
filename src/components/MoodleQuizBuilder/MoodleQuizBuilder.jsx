@@ -2,20 +2,18 @@ import React, { useState, useEffect } from 'react';
 import './MoodleQuizBuilder.css';
 
 const MoodleQuizBuilder = () => {
-  
+
   const [sampleQuestions, setSampleQuestions] = useState([]);
   useEffect(() => {
     // Запрос на получение вопросов
     fetch(`${process.env.REACT_APP_SERVER_URL}/api/questions`)
       .then(response => response.json())
       .then(data => {
-    
+
         setSampleQuestions(data);
       })
       .catch(error => console.error('Ошибка при получении вопросов:', error));
   }, []);
-
-
 
   const [moodleXml, setMoodleXml] = useState('');
   const [selectedQuestions, setSelectedQuestions] = useState([]);
@@ -78,7 +76,7 @@ const MoodleQuizBuilder = () => {
     if (draggedQuestion) {
       const touch = e.changedTouches[0];
       const element = document.elementFromPoint(touch.clientX, touch.clientY);
-      
+
       if (element && element.closest('[data-drop-area]')) {
         if (!selectedQuestions.some(q => q.id === draggedQuestion.id)) {
           setSelectedQuestions([...selectedQuestions, draggedQuestion]);
@@ -174,15 +172,93 @@ const MoodleQuizBuilder = () => {
       .catch(err => alert(`Ошибка: ${err.message}`));
   };
 
+  // сохранение в бд
+  const [testName, setTestName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const saveTestToUser = async () => {
+
+    if (!testName.trim()) {
+      alert('Введите название теста');
+      return;
+    }
+
+    if (!selectedCategory) {
+      alert('Выберите категорию для теста');
+      return;
+    }
+
+    if (selectedQuestions.length === 0) {
+      alert('Добавьте хотя бы один вопрос');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/save-test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
+        },
+        body: JSON.stringify({
+          name: testName,
+          category: selectedCategory, // передаем название категории
+          questions: selectedQuestions.map(q => q.id),
+          xml: generateMoodleQuiz()
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка при сохранении теста');
+      }
+
+      alert('Тест успешно сохранен!');
+      setTestName('');
+      setSelectedCategory('');
+    } catch (error) {
+      console.error('Ошибка:', error);
+      alert(error.message || 'Не удалось сохранить тест');
+    } finally {
+      setIsSaving(false);
+    }
+  };
   return (
     <div className="moodle-quiz-builder">
-      
+      <div className="save-test-container">
+        <input
+          type="text"
+          value={testName}
+          onChange={(e) => setTestName(e.target.value)}
+          placeholder="Название теста"
+          className="test-name-input"
+        />
+
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          className="category-select"
+        >
+          <option value="">Выберите категорию</option>
+          {questionCategories.map(category => (
+            <option key={category} value={category}>{category}</option>
+          ))}
+        </select>
+
+        <button
+          onClick={saveTestToUser}
+          disabled={isSaving || !testName.trim() || !selectedCategory || selectedQuestions.length === 0}
+          className={`save-test-btn ${isSaving ? 'saving' : ''}`}
+        >
+          {isSaving ? 'Сохранение...' : 'Сохранить тест'}
+        </button>
+      </div>
+
       <div className="actions-container">
         <button
           onClick={generateMoodleQuiz}
-          className={`generate-btn ${
-            selectedQuestions.length === 0 ? 'disabled' : ''
-          }`}
+          className={`generate-btn ${selectedQuestions.length === 0 ? 'disabled' : ''
+            }`}
           disabled={selectedQuestions.length === 0}
         >
           Сгенерировать Moodle XML
@@ -190,9 +266,8 @@ const MoodleQuizBuilder = () => {
 
         <button
           onClick={downloadXml}
-          className={`download-btn ${
-            !moodleXml ? 'disabled' : ''
-          }`}
+          className={`download-btn ${!moodleXml ? 'disabled' : ''
+            }`}
           disabled={!moodleXml}
         >
           Скачать XML
@@ -311,11 +386,9 @@ const MoodleQuizBuilder = () => {
                   onTouchStart={(e) => handleTouchStart(e, question, index)}
                   onTouchMove={(e) => handleTouchMoveInside(e, index)}
                   onTouchEnd={handleTouchEnd}
-                  className={`selected-question-item ${
-                    dragOverIndex === index ? 'drag-over' : ''
-                  } ${
-                    draggedQuestion?.id === question.id ? 'dragging' : ''
-                  }`}
+                  className={`selected-question-item ${dragOverIndex === index ? 'drag-over' : ''
+                    } ${draggedQuestion?.id === question.id ? 'dragging' : ''
+                    }`}
                 >
                   <div>
                     <div><strong>{question.name}</strong></div>

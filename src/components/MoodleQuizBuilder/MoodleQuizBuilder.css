@@ -207,3 +207,39 @@
     font-family: monospace;
     line-height: 1.5;
   }
+  /* Стили кнопок */
+  .save-test-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.test-name-input {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  flex-grow: 1;
+}
+
+.save-test-btn {
+  padding: 8px 16px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.save-test-btn:hover:not(:disabled) {
+  background-color: #45a049;
+}
+
+.save-test-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.save-test-btn.saving {
+  background-color: #ff9800;
+}
