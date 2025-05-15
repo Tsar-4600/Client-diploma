@@ -9,13 +9,11 @@ const MyQuestionList = ({ refreshTrigger }) => {
   // Функция для загрузки вопросов
   const fetchQuestions = async () => {
     try {
-
-
-
       const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/my-questions`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
         },
       });
 
