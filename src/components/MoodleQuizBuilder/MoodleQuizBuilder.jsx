@@ -2,75 +2,123 @@ import React, { useState, useEffect } from 'react';
 import './MoodleQuizBuilder.css';
 
 const MoodleQuizBuilder = () => {
-
+  // Состояния для данных
   const [sampleQuestions, setSampleQuestions] = useState([]);
-  useEffect(() => {
-    // Запрос на получение вопросов
-    fetch(`${process.env.REACT_APP_SERVER_URL}/api/questions`)
-      .then(response => response.json())
-      .then(data => {
-
-        setSampleQuestions(data);
-      })
-      .catch(error => console.error('Ошибка при получении вопросов:', error));
-  }, []);
-
+  const [categories, setCategories] = useState([]);
+  const [themes, setThemes] = useState([]);
+  const [loadingThemes, setLoadingThemes] = useState(false);
+  
+  // Состояния для управления интерфейсом
   const [moodleXml, setMoodleXml] = useState('');
   const [selectedQuestions, setSelectedQuestions] = useState([]);
   const [draggedQuestion, setDraggedQuestion] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [testName, setTestName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('');
+
+  // Фильтры
   const [filters, setFilters] = useState({
     type: '',
     category: '',
+    theme: '',
     name: ''
   });
 
-  // Получаем уникальные типы и категории для фильтров
-  const questionTypes = [...new Set(sampleQuestions.map(q => q.type))];
-  const questionCategories = [...new Set(sampleQuestions.map(q => q.category))];
+  // Загрузка данных при монтировании компонента
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Загрузка вопросов
+        const questionsResponse = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/questions`);
+        const questionsData = await questionsResponse.json();
+        setSampleQuestions(questionsData);
+
+        // Загрузка категорий
+        const categoriesResponse = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/categories`);
+        const categoriesData = await categoriesResponse.json();
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Ошибка при загрузке данных:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Загрузка тем при изменении категории
+  const loadThemes = async (category) => {
+    if (!category) {
+      setThemes([]);
+      return;
+    }
+    
+    setLoadingThemes(true);
+    try {
+      const response = await fetch(
+        `${process.env.REACT_APP_SERVER_URL}/api/themes?category=${encodeURIComponent(category)}`
+      );
+      const data = await response.json();
+      setThemes(data);
+    } catch (error) {
+      console.error('Ошибка при загрузке тем:', error);
+    } finally {
+      setLoadingThemes(false);
+    }
+  };
+
+  // Обработчики фильтров
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    
+    if (name === 'category') {
+      setFilters(prev => ({
+        ...prev,
+        category: value,
+        theme: ''
+      }));
+      loadThemes(value);
+    } else {
+      setFilters(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+  };
 
   // Фильтрация вопросов
   const filteredQuestions = sampleQuestions.filter(question => {
     const matchesType = !filters.type || question.type === filters.type;
     const matchesCategory = !filters.category || question.category === filters.category;
+    const matchesTheme = !filters.theme || (question.theme && question.theme === filters.theme);
     const matchesName = !filters.name ||
       question.name.toLowerCase().includes(filters.name.toLowerCase());
 
-    return matchesType && matchesCategory && matchesName;
+    return matchesType && matchesCategory && matchesTheme && matchesName;
   });
 
-  // Обработчик изменения фильтров
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  // Получаем уникальные типы вопросов
+  const questionTypes = [...new Set(sampleQuestions.map(q => q.type))];
 
-  // Обработчик начала перетаскивания
+  // Drag and Drop обработчики
   const handleDragStart = (question, index) => {
     setDraggedQuestion({ ...question, index });
   };
 
-  // Обработчик завершения перетаскивания
   const handleDragEnd = () => {
     setDraggedQuestion(null);
     setDragOverIndex(null);
   };
 
-  // Обработчик touch-старта
   const handleTouchStart = (e, question, index) => {
     e.preventDefault();
     setDraggedQuestion({ ...question, index });
   };
 
-  // Обработчик touch-перемещения
   const handleTouchMove = (e) => {
     e.preventDefault();
   };
 
-  // Обработчик touch-окончания
   const handleTouchEnd = (e) => {
     e.preventDefault();
     if (draggedQuestion) {
@@ -87,12 +135,10 @@ const MoodleQuizBuilder = () => {
     setDragOverIndex(null);
   };
 
-  // Обработчик наведения на область выбранных вопросов
   const handleDragOver = (e) => {
     e.preventDefault();
   };
 
-  // Обработчик отпускания вопроса в области выбранных (извне)
   const handleDropFromOutside = (e) => {
     e.preventDefault();
     if (draggedQuestion && !selectedQuestions.some(q => q.id === draggedQuestion.id)) {
@@ -101,37 +147,37 @@ const MoodleQuizBuilder = () => {
     setDragOverIndex(null);
   };
 
-  // Обработчик наведения на вопрос в выбранных
   const handleDragOverQuestion = (e, index) => {
     e.preventDefault();
     setDragOverIndex(index);
   };
 
-  // Обработчик touch-перемещения внутри выбранных
-  const handleTouchMoveInside = (e, index) => {
-    e.preventDefault();
-    setDragOverIndex(index);
-  };
+ // Обработчик touch-перемещения внутри выбранных вопросов
+const handleTouchMoveInside = (e, index) => {
+  e.preventDefault();
+  setDragOverIndex(index);
+};
 
-  // Обработчик отпускания вопроса внутри выбранных
-  const handleDropInsideSelected = (e, dropIndex) => {
-    e.preventDefault();
-    if (draggedQuestion && draggedQuestion.index !== undefined) {
-      // Перемещение внутри выбранных вопросов
-      const newSelected = [...selectedQuestions];
-      const [removed] = newSelected.splice(draggedQuestion.index, 1);
-      newSelected.splice(dropIndex, 0, removed);
-      setSelectedQuestions(newSelected);
-    }
-    setDragOverIndex(null);
-  };
+// Обработчик отпускания вопроса внутри выбранных
+const handleDropInsideSelected = (e, dropIndex) => {
+  e.preventDefault();
+  if (draggedQuestion && draggedQuestion.index !== undefined) {
+    // Перемещение внутри выбранных вопросов
+    const newSelected = [...selectedQuestions];
+    const [removed] = newSelected.splice(draggedQuestion.index, 1);
+    newSelected.splice(dropIndex, 0, removed);
+    setSelectedQuestions(newSelected);
+  }
+  setDragOverIndex(null);
+};
 
+  
   // Удаление вопроса из выбранных
   const removeQuestion = (questionId) => {
     setSelectedQuestions(selectedQuestions.filter(q => q.id !== questionId));
   };
 
-  // Генерация Moodle Quiz XML
+  // Генерация XML
   const generateMoodleQuiz = () => {
     let quizXml = `<?xml version="1.0" encoding="UTF-8"?>
 <quiz>
@@ -151,7 +197,7 @@ const MoodleQuizBuilder = () => {
     return quizXml;
   };
 
-  // Скачивание XML-файла
+  // Скачивание XML
   const downloadXml = () => {
     const xmlContent = generateMoodleQuiz();
     const blob = new Blob([xmlContent], { type: 'application/xml' });
@@ -172,12 +218,8 @@ const MoodleQuizBuilder = () => {
       .catch(err => alert(`Ошибка: ${err.message}`));
   };
 
-  // сохранение в бд
-  const [testName, setTestName] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('');
+  // Сохранение теста
   const saveTestToUser = async () => {
-
     if (!testName.trim()) {
       alert('Введите название теста');
       return;
@@ -203,7 +245,7 @@ const MoodleQuizBuilder = () => {
         },
         body: JSON.stringify({
           name: testName,
-          category: selectedCategory, // передаем название категории
+          category: selectedCategory,
           questions: selectedQuestions.map(q => q.id),
           xml: generateMoodleQuiz()
         }),
@@ -216,6 +258,7 @@ const MoodleQuizBuilder = () => {
       alert('Тест успешно сохранен!');
       setTestName('');
       setSelectedCategory('');
+      setSelectedQuestions([]);
     } catch (error) {
       console.error('Ошибка:', error);
       alert(error.message || 'Не удалось сохранить тест');
@@ -223,8 +266,10 @@ const MoodleQuizBuilder = () => {
       setIsSaving(false);
     }
   };
+
   return (
     <div className="moodle-quiz-builder">
+      {/* Панель сохранения теста */}
       <div className="save-test-container">
         <input
           type="text"
@@ -236,11 +281,14 @@ const MoodleQuizBuilder = () => {
 
         <select
           value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
+          onChange={(e) => {
+            setSelectedCategory(e.target.value);
+            loadThemes(e.target.value);
+          }}
           className="category-select"
         >
           <option value="">Выберите категорию</option>
-          {questionCategories.map(category => (
+          {categories.map(category => (
             <option key={category} value={category}>{category}</option>
           ))}
         </select>
@@ -254,29 +302,63 @@ const MoodleQuizBuilder = () => {
         </button>
       </div>
 
+      {/* Панель действий */}
       <div className="actions-container">
         <button
           onClick={generateMoodleQuiz}
-          className={`generate-btn ${selectedQuestions.length === 0 ? 'disabled' : ''
-            }`}
           disabled={selectedQuestions.length === 0}
+          className={`generate-btn ${selectedQuestions.length === 0 ? 'disabled' : ''}`}
         >
           Сгенерировать Moodle XML
         </button>
 
         <button
           onClick={downloadXml}
-          className={`download-btn ${!moodleXml ? 'disabled' : ''
-            }`}
           disabled={!moodleXml}
+          className={`download-btn ${!moodleXml ? 'disabled' : ''}`}
         >
           Скачать XML
         </button>
       </div>
+
       {/* Фильтры */}
       <div className="filters-container">
         <h3>Фильтры</h3>
         <div className="filters-row">
+        
+          <div className="filter-group">
+            <label htmlFor="category-filter">Категория:</label>
+            <select
+              id="category-filter"
+              name="category"
+              value={filters.category}
+              onChange={handleFilterChange}
+              className="filter-select"
+            >
+              <option value="">Все категории</option>
+              {categories.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label htmlFor="theme-filter">Тема:</label>
+            <select
+              id="theme-filter"
+              name="theme"
+              value={filters.theme}
+              onChange={handleFilterChange}
+              className="filter-select"
+              disabled={!filters.category || loadingThemes}
+            >
+              <option value="">Все темы</option>
+              {themes.map(theme => (
+                <option key={theme} value={theme}>{theme}</option>
+              ))}
+              {loadingThemes && <option disabled>Загрузка тем...</option>}
+            </select>
+          </div>
           <div className="filter-group">
             <label htmlFor="type-filter">Тип вопроса:</label>
             <select
@@ -293,21 +375,6 @@ const MoodleQuizBuilder = () => {
             </select>
           </div>
 
-          <div className="filter-group">
-            <label htmlFor="category-filter">Категория:</label>
-            <select
-              id="category-filter"
-              name="category"
-              value={filters.category}
-              onChange={handleFilterChange}
-              className="filter-select"
-            >
-              <option value="">Все категории</option>
-              {questionCategories.map(category => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </div>
 
           <div className="filter-group">
             <label htmlFor="name-filter">Поиск по названию:</label>
@@ -323,7 +390,7 @@ const MoodleQuizBuilder = () => {
           </div>
 
           <button
-            onClick={() => setFilters({ type: '', category: '', name: '' })}
+            onClick={() => setFilters({ type: '', category: '', theme: '', name: '' })}
             className="reset-filters-btn"
           >
             Сбросить фильтры
@@ -331,19 +398,24 @@ const MoodleQuizBuilder = () => {
         </div>
       </div>
 
+      {/* Основной контейнер с вопросами */}
       <div className="questions-container">
-        {/* Доступные вопросы */}
+        {/* Банк вопросов */}
         <div className="question-bank">
           <h3>Банк вопросов ({filteredQuestions.length})</h3>
-          <div className="question-bank-drop-area">
-            {filteredQuestions.map(question => (
+          <div 
+            className="question-bank-drop-area"
+            onDragOver={handleDragOver}
+            onDrop={handleDropFromOutside}
+          >
+            {filteredQuestions.map((question, index) => (
               !selectedQuestions.some(q => q.id === question.id) && (
                 <div
                   key={question.id}
                   draggable
-                  onDragStart={() => handleDragStart(question)}
+                  onDragStart={() => handleDragStart(question, index)}
                   onDragEnd={handleDragEnd}
-                  onTouchStart={(e) => handleTouchStart(e, question)}
+                  onTouchStart={(e) => handleTouchStart(e, question, index)}
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
                   className="question-item"
@@ -352,6 +424,7 @@ const MoodleQuizBuilder = () => {
                   <div className="question-meta">
                     <span>Тип: {question.type}</span>
                     <span>Категория: {question.category}</span>
+                    {question.theme && <span>Тема: {question.theme}</span>}
                   </div>
                 </div>
               )
@@ -364,11 +437,11 @@ const MoodleQuizBuilder = () => {
           <h3>Тело теста ({selectedQuestions.length})</h3>
           <div
             data-drop-area
+            className="selected-questions-drop-area"
             onDragOver={handleDragOver}
             onDrop={handleDropFromOutside}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
-            className="selected-questions-drop-area"
           >
             {selectedQuestions.length === 0 ? (
               <div className="empty-drop-area">
@@ -386,15 +459,14 @@ const MoodleQuizBuilder = () => {
                   onTouchStart={(e) => handleTouchStart(e, question, index)}
                   onTouchMove={(e) => handleTouchMoveInside(e, index)}
                   onTouchEnd={handleTouchEnd}
-                  className={`selected-question-item ${dragOverIndex === index ? 'drag-over' : ''
-                    } ${draggedQuestion?.id === question.id ? 'dragging' : ''
-                    }`}
+                  className={`selected-question-item ${dragOverIndex === index ? 'drag-over' : ''} ${draggedQuestion?.id === question.id ? 'dragging' : ''}`}
                 >
                   <div>
                     <div><strong>{question.name}</strong></div>
                     <div className="question-meta">
                       <span>Тип: {question.type}</span>
                       <span>Категория: {question.category}</span>
+                      {question.theme && <span>Тема: {question.theme}</span>}
                     </div>
                   </div>
                   <div className="question-controls">
@@ -413,16 +485,18 @@ const MoodleQuizBuilder = () => {
         </div>
       </div>
 
-
+      {/* Предпросмотр XML */}
       {moodleXml && (
         <div className="result-container">
-          <h2>Результат:</h2>
-          <button
-            onClick={copyToClipboard}
-            className="copy-btn"
-          >
-            Копировать XML
-          </button>
+          <div className="result-header">
+            <h2>Результат:</h2>
+            <button
+              onClick={copyToClipboard}
+              className="copy-btn"
+            >
+              Копировать XML
+            </button>
+          </div>
           <pre className="xml-preview">
             {moodleXml}
           </pre>
