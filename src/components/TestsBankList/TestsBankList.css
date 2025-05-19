@@ -1,9 +1,19 @@
+/* TestsBankList.css */
+
 .tests-bank-container {
     max-width: 1200px;
-    padding-top: 20px;
-    padding-bottom: 20px;
+
+
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+.tests-bank-container h2 {
+    color: #2d3748;
+    margin-bottom: 30px;
+    font-size: 28px;
+}
+
+/* Стили для панели фильтрации */
 .filter-panel {
     display: flex;
     align-items: center;
@@ -15,37 +25,83 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 180px;
+}
+
 .filter-panel label {
     font-weight: 500;
     color: #2d3748;
+    margin-bottom: 8px;
+    font-size: 14px;
 }
 
-.filter-select, .rating-select {
+/* Общие стили для select и input */
+.filter-select, 
+.rating-select,
+.search-input {
     padding: 8px 12px;
     border: 1px solid #cbd5e0;
     border-radius: 6px;
     background-color: white;
     font-size: 14px;
-    cursor: pointer;
     transition: all 0.2s;
 }
 
-.filter-select:hover, .rating-select:hover {
+.filter-select:hover, 
+.rating-select:hover,
+.search-input:hover {
     border-color: #90cdf4;
 }
 
-.filter-select:focus, .rating-select:focus {
+.filter-select:focus, 
+.rating-select:focus,
+.search-input:focus {
     outline: none;
     border-color: #4299e1;
     box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
 }
 
+/* Специфические стили для поисковой строки */
+.search-input {
+    width: 100%;
+    min-width: 200px;
+}
+
+.search-input::placeholder {
+    color: #a0aec0;
+    opacity: 0.8;
+}
+
+/* Стили для кнопки сброса */
+.reset-filters-btn {
+    padding: 8px 15px;
+    background-color: #e2e8f0;
+    color: #2d3748;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+    align-self: flex-end;
+}
+
+.reset-filters-btn:hover {
+    background-color: #cbd5e0;
+}
+
+/* Счетчик результатов */
 .results-count {
     margin-left: auto;
     font-size: 14px;
     color: #4a5568;
+    font-weight: 500;
 }
 
+/* Стили для сетки тестов */
 .tests-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -84,6 +140,7 @@
     color: #4a5568;
 }
 
+/* Стили для рейтинга */
 .rating-control {
     display: flex;
     align-items: center;
@@ -116,6 +173,7 @@
     color: #e53e3e;
 }
 
+/* Сообщения о состоянии */
 .loading {
     text-align: center;
     padding: 40px;
@@ -136,14 +194,26 @@
     color: #718096;
 }
 
+/* Адаптивные стили */
 @media (max-width: 768px) {
     .filter-panel {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
+        gap: 10px;
+    }
+    
+    .filter-group {
+        width: 100%;
     }
     
     .results-count {
         margin-left: 0;
+        margin-top: 10px;
+    }
+    
+    .reset-filters-btn {
+        align-self: stretch;
+        margin-top: 5px;
     }
     
     .tests-grid {

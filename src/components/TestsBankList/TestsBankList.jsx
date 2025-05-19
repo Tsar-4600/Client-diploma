@@ -6,7 +6,16 @@ const TestsBankList = ({ refreshKey }) => {
     const [filteredTests, setFilteredTests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [ratingFilter, setRatingFilter] = useState(0); // 0 = все тесты
+    const [categories, setCategories] = useState([]);
+    const [themes, setThemes] = useState([]);
+    
+    // Фильтры
+    const [filters, setFilters] = useState({
+        rating: 0,
+        category: '',
+        theme: '',
+        search: ''
+    });
 
     const fetchTests = async () => {
         try {
@@ -21,7 +30,14 @@ const TestsBankList = ({ refreshKey }) => {
 
             const data = await response.json();
             setTests(data);
-            setFilteredTests(data); // Инициализируем отфильтрованные тесты
+            setFilteredTests(data);
+            
+            // Извлекаем уникальные категории и темы
+            const uniqueCategories = [...new Set(data.map(test => test.category_name))];
+            const uniqueThemes = [...new Set(data.map(test => test.theme_name))];
+            
+            setCategories(uniqueCategories);
+            setThemes(uniqueThemes);
         } catch (err) {
             setError('Не удалось загрузить тесты');
         } finally {
@@ -33,17 +49,58 @@ const TestsBankList = ({ refreshKey }) => {
         fetchTests();
     }, [refreshKey]);
 
-    // Фильтрация тестов по рейтингу
+    // Применение фильтров
     useEffect(() => {
-        if (ratingFilter === 0) {
-            setFilteredTests(tests);
-        } else {
-            const filtered = tests.filter(test => 
-                Math.floor(parseFloat(test.avg_rating)) >= ratingFilter
+        let result = [...tests];
+        
+        // Фильтр по рейтингу
+        if (filters.rating > 0) {
+            result = result.filter(test => 
+                Math.floor(parseFloat(test.avg_rating)) >= filters.rating
             );
-            setFilteredTests(filtered);
         }
-    }, [ratingFilter, tests]);
+        
+        // Фильтр по категории
+        if (filters.category) {
+            result = result.filter(test => 
+                test.category_name === filters.category
+            );
+        }
+        
+        // Фильтр по теме
+        if (filters.theme) {
+            result = result.filter(test => 
+                test.theme_name === filters.theme
+            );
+        }
+        
+        // Поиск по названию
+        if (filters.search) {
+            const searchTerm = filters.search.toLowerCase();
+            result = result.filter(test => 
+                test.test_name.toLowerCase().includes(searchTerm)
+            );
+        }
+        
+        setFilteredTests(result);
+    }, [filters, tests]);
+
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFilters(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const resetFilters = () => {
+        setFilters({
+            rating: 0,
+            category: '',
+            theme: '',
+            search: ''
+        });
+    };
 
     const rateTest = async (testId, rating) => {
         try {
@@ -67,21 +124,75 @@ const TestsBankList = ({ refreshKey }) => {
 
     return (
         <div className="tests-bank-container">
+            <h2>Все тесты</h2>
+            
             {/* Панель фильтрации */}
             <div className="filter-panel">
-                <label htmlFor="rating-filter">Фильтр по рейтингу:</label>
-                <select
-                    id="rating-filter"
-                    value={ratingFilter}
-                    onChange={(e) => setRatingFilter(Number(e.target.value))}
-                    className="filter-select"
-                >
-                    <option value="0">Все тесты</option>
-                    <option value="4">4 ★ и выше</option>
-                    <option value="3">3 ★ и выше</option>
-                    <option value="2">2 ★ и выше</option>
-                    <option value="1">1 ★ и выше</option>
-                </select>
+                <div className="filter-group">
+                    <label htmlFor="rating-filter">Рейтинг:</label>
+                    <select
+                        id="rating-filter"
+                        name="rating"
+                        value={filters.rating}
+                        onChange={handleFilterChange}
+                        className="filter-select"
+                    >
+                        <option value="0">Все тесты</option>
+                        <option value="4">4 ★ и выше</option>
+                        <option value="3">3 ★ и выше</option>
+                        <option value="2">2 ★ и выше</option>
+                        <option value="1">1 ★ и выше</option>
+                    </select>
+                </div>
+                
+                <div className="filter-group">
+                    <label htmlFor="category-filter">Категория:</label>
+                    <select
+                        id="category-filter"
+                        name="category"
+                        value={filters.category}
+                        onChange={handleFilterChange}
+                        className="filter-select"
+                    >
+                        <option value="">Все категории</option>
+                        {categories.map(category => (
+                            <option key={category} value={category}>{category}</option>
+                        ))}
+                    </select>
+                </div>
+                
+                <div className="filter-group">
+                    <label htmlFor="theme-filter">Тема:</label>
+                    <select
+                        id="theme-filter"
+                        name="theme"
+                        value={filters.theme}
+                        onChange={handleFilterChange}
+                        className="filter-select"
+                    >
+                        <option value="">Все темы</option>
+                        {themes.map(theme => (
+                            <option key={theme} value={theme}>{theme}</option>
+                        ))}
+                    </select>
+                </div>
+                
+                <div className="filter-group">
+                    <label htmlFor="search-filter">Поиск:</label>
+                    <input
+                        id="search-filter"
+                        type="text"
+                        name="search"
+                        value={filters.search}
+                        onChange={handleFilterChange}
+                        placeholder="Название теста"
+                        className="search-input"
+                    />
+                </div>
+                
+                <button onClick={resetFilters} className="reset-filters-btn">
+                    Сбросить фильтры
+                </button>
                 
                 <div className="results-count">
                     Найдено тестов: {filteredTests.length}
@@ -91,7 +202,7 @@ const TestsBankList = ({ refreshKey }) => {
             {/* Список тестов */}
             <div className="tests-grid">
                 {filteredTests.length === 0 ? (
-                    <p className="no-tests">Нет тестов, соответствующих выбранному фильтру</p>
+                    <p className="no-tests">Нет тестов, соответствующих выбранным фильтрам</p>
                 ) : (
                     filteredTests.map(test => (
                         <div key={test.id_test} className="test-card">
@@ -100,6 +211,7 @@ const TestsBankList = ({ refreshKey }) => {
                             <div className="test-info">
                                 <p><strong>Автор:</strong> {test.username}</p>
                                 <p><strong>Категория:</strong> {test.category_name}</p>
+                                <p><strong>Тема:</strong> {test.theme_name}</p>
                                 <p>
                                     <strong>Рейтинг:</strong>
                                     <span className={`rating-value ${getRatingColorClass(test.avg_rating)}`}>

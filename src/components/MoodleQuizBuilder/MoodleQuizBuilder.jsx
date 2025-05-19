@@ -16,6 +16,7 @@ const MoodleQuizBuilder = () => {
   const [testName, setTestName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedTheme, setSelectedTheme] = useState('');
 
   // Фильтры
   const [filters, setFilters] = useState({
@@ -24,6 +25,82 @@ const MoodleQuizBuilder = () => {
     theme: '',
     name: ''
   });
+
+  // Функция для декодирования HTML-сущностей
+  const decodeHtmlEntities = (text) => {
+    if (!text) return "";
+    const textArea = document.createElement('textarea');
+    textArea.innerHTML = text;
+    return textArea.value;
+  };
+
+  // Функция для парсинга XML и извлечения правильных ответов
+  const parseCorrectAnswers = (xml, questionType) => {
+    try {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xml, "text/xml");
+      
+      switch(questionType) {
+        case 'multichoice':
+        case 'truefalse':
+          const answers = xmlDoc.getElementsByTagName("answer");
+          return Array.from(answers)
+            .filter(a => a.getAttribute("fraction") === "100")
+            .map(a => {
+              const text = a.getElementsByTagName("text")[0]?.textContent || "";
+              return decodeHtmlEntities(text);
+            });
+
+        case 'shortanswer':
+          const shortAnswer = xmlDoc.getElementsByTagName("answer")[0]?.textContent;
+          return shortAnswer ? [decodeHtmlEntities(shortAnswer)] : ["Правильный ответ не найден"];
+
+        case 'numerical':
+          const numericalAnswer = xmlDoc.getElementsByTagName("text")[0]?.textContent;
+          const tolerance = xmlDoc.getElementsByTagName("tolerance")[0]?.textContent;
+          if (numericalAnswer) {
+            return tolerance 
+              ? [`${numericalAnswer} (±${tolerance})`]
+              : [numericalAnswer];
+          }
+          return ["Правильный ответ не найден"];
+
+        case 'matching':
+          const subquestions = xmlDoc.getElementsByTagName("subquestion");
+          return Array.from(subquestions).map(sq => {
+            const question = decodeHtmlEntities(
+              sq.getElementsByTagName("text")[0]?.textContent || "Вопрос"
+            );
+            const answer = decodeHtmlEntities(
+              sq.getElementsByTagName("answer")[0]?.textContent || "Ответ"
+            );
+            return `${question} → ${answer}`;
+          });
+
+        case 'essay':
+          return ["Эссе не имеет однозначного правильного ответа"];
+
+        default:
+          return ["Неизвестный тип вопроса"];
+      }
+    } catch (error) {
+      console.error("Ошибка парсинга XML:", error);
+      return ["Не удалось проанализировать ответы"];
+    }
+  };
+
+  // Функция для перевода типов вопросов
+  const translateQuestionType = (type) => {
+    const translations = {
+      'multichoice': 'Множественный выбор',
+      'truefalse': 'Верно/Неверно',
+      'shortanswer': 'Короткий ответ',
+      'numerical': 'Числовой ответ',
+      'matching': 'Соответствие',
+      'essay': 'Эссе'
+    };
+    return translations[type] || type;
+  };
 
   // Загрузка данных при монтировании компонента
   useEffect(() => {
@@ -50,6 +127,7 @@ const MoodleQuizBuilder = () => {
   const loadThemes = async (category) => {
     if (!category) {
       setThemes([]);
+      setSelectedTheme('');
       return;
     }
     
@@ -97,8 +175,11 @@ const MoodleQuizBuilder = () => {
     return matchesType && matchesCategory && matchesTheme && matchesName;
   });
 
-  // Получаем уникальные типы вопросов
-  const questionTypes = [...new Set(sampleQuestions.map(q => q.type))];
+  // Получаем уникальные типы вопросов с переводами
+  const questionTypes = [...new Set(sampleQuestions.map(q => q.type))].map(type => ({
+    value: type,
+    label: translateQuestionType(type)
+  }));
 
   // Drag and Drop обработчики
   const handleDragStart = (question, index) => {
@@ -152,26 +233,22 @@ const MoodleQuizBuilder = () => {
     setDragOverIndex(index);
   };
 
- // Обработчик touch-перемещения внутри выбранных вопросов
-const handleTouchMoveInside = (e, index) => {
-  e.preventDefault();
-  setDragOverIndex(index);
-};
+  const handleTouchMoveInside = (e, index) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
 
-// Обработчик отпускания вопроса внутри выбранных
-const handleDropInsideSelected = (e, dropIndex) => {
-  e.preventDefault();
-  if (draggedQuestion && draggedQuestion.index !== undefined) {
-    // Перемещение внутри выбранных вопросов
-    const newSelected = [...selectedQuestions];
-    const [removed] = newSelected.splice(draggedQuestion.index, 1);
-    newSelected.splice(dropIndex, 0, removed);
-    setSelectedQuestions(newSelected);
-  }
-  setDragOverIndex(null);
-};
+  const handleDropInsideSelected = (e, dropIndex) => {
+    e.preventDefault();
+    if (draggedQuestion && draggedQuestion.index !== undefined) {
+      const newSelected = [...selectedQuestions];
+      const [removed] = newSelected.splice(draggedQuestion.index, 1);
+      newSelected.splice(dropIndex, 0, removed);
+      setSelectedQuestions(newSelected);
+    }
+    setDragOverIndex(null);
+  };
 
-  
   // Удаление вопроса из выбранных
   const removeQuestion = (questionId) => {
     setSelectedQuestions(selectedQuestions.filter(q => q.id !== questionId));
@@ -225,8 +302,8 @@ const handleDropInsideSelected = (e, dropIndex) => {
       return;
     }
 
-    if (!selectedCategory) {
-      alert('Выберите категорию для теста');
+    if (!selectedTheme) {
+      alert('Выберите тему для теста');
       return;
     }
 
@@ -245,7 +322,7 @@ const handleDropInsideSelected = (e, dropIndex) => {
         },
         body: JSON.stringify({
           name: testName,
-          category: selectedCategory,
+          theme: selectedTheme,
           questions: selectedQuestions.map(q => q.id),
           xml: generateMoodleQuiz()
         }),
@@ -258,6 +335,7 @@ const handleDropInsideSelected = (e, dropIndex) => {
       alert('Тест успешно сохранен!');
       setTestName('');
       setSelectedCategory('');
+      setSelectedTheme('');
       setSelectedQuestions([]);
     } catch (error) {
       console.error('Ошибка:', error);
@@ -283,6 +361,7 @@ const handleDropInsideSelected = (e, dropIndex) => {
           value={selectedCategory}
           onChange={(e) => {
             setSelectedCategory(e.target.value);
+            setSelectedTheme('');
             loadThemes(e.target.value);
           }}
           className="category-select"
@@ -293,9 +372,22 @@ const handleDropInsideSelected = (e, dropIndex) => {
           ))}
         </select>
 
+        <select
+          value={selectedTheme}
+          onChange={(e) => setSelectedTheme(e.target.value)}
+          className="theme-select"
+          disabled={!selectedCategory || loadingThemes}
+        >
+          <option value="">Выберите тему</option>
+          {themes.map(theme => (
+            <option key={theme} value={theme}>{theme}</option>
+          ))}
+          {loadingThemes && <option disabled>Загрузка тем...</option>}
+        </select>
+
         <button
           onClick={saveTestToUser}
-          disabled={isSaving || !testName.trim() || !selectedCategory || selectedQuestions.length === 0}
+          disabled={isSaving || !testName.trim() || !selectedTheme || selectedQuestions.length === 0}
           className={`save-test-btn ${isSaving ? 'saving' : ''}`}
         >
           {isSaving ? 'Сохранение...' : 'Сохранить тест'}
@@ -325,7 +417,6 @@ const handleDropInsideSelected = (e, dropIndex) => {
       <div className="filters-container">
         <h3>Фильтры</h3>
         <div className="filters-row">
-        
           <div className="filter-group">
             <label htmlFor="category-filter">Категория:</label>
             <select
@@ -370,11 +461,10 @@ const handleDropInsideSelected = (e, dropIndex) => {
             >
               <option value="">Все типы</option>
               {questionTypes.map(type => (
-                <option key={type} value={type}>{type}</option>
+                <option key={type.value} value={type.value}>{type.label}</option>
               ))}
             </select>
           </div>
-
 
           <div className="filter-group">
             <label htmlFor="name-filter">Поиск по названию:</label>
@@ -419,12 +509,21 @@ const handleDropInsideSelected = (e, dropIndex) => {
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
                   className="question-item"
+                  data-type={question.type}
                 >
                   <div><strong>{question.name}</strong></div>
                   <div className="question-meta">
-                    <span>Тип: {question.type}</span>
+                    <span>Тип: {translateQuestionType(question.type)}</span>
                     <span>Категория: {question.category}</span>
                     {question.theme && <span>Тема: {question.theme}</span>}
+                  </div>
+                  <div className="correct-answers">
+                    <strong>Правильные ответы:</strong>
+                    <ul>
+                      {parseCorrectAnswers(question.xml, question.type).map((answer, i) => (
+                        <li key={i}>{answer}</li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               )
@@ -464,9 +563,17 @@ const handleDropInsideSelected = (e, dropIndex) => {
                   <div>
                     <div><strong>{question.name}</strong></div>
                     <div className="question-meta">
-                      <span>Тип: {question.type}</span>
+                      <span>Тип: {translateQuestionType(question.type)}</span>
                       <span>Категория: {question.category}</span>
                       {question.theme && <span>Тема: {question.theme}</span>}
+                    </div>
+                    <div className="correct-answers">
+                      <strong>Правильные ответы:</strong>
+                      <ul>
+                        {parseCorrectAnswers(question.xml, question.type).map((answer, i) => (
+                          <li key={i}>{answer}</li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                   <div className="question-controls">

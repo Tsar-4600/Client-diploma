@@ -1,89 +1,169 @@
 /* QuestionBuilder.css */
 
 .container {
-    padding: 20px;
-    max-width: 800px;
-  }
-  
-  .header {
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  
-  .form {
-    background-color: #f9f9f9;
-    padding: 20px;
-    border-radius: 5px;
-  }
-  
-  .section {
-    margin-bottom: 20px;
-  }
-  
-  .label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-  }
-  
-  .input {
-    padding: 8px;
-    width: 100%;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    box-sizing: border-box;
-  }
-  
-  .input-small {
-    width: 80px;
-  }
-  
-  .answerItem,
-  .pairItem {
-    border: 1px solid #ddd;
-    padding: 10px;
-    margin-bottom: 10px;
-    position: relative;
-  }
-  
-  .removeButton {
-    position: absolute;
-    right: 10px;
-    top: 10px;
-    background: transparent;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-  }
-  
-  .submitButton {
-    padding: 10px 20px;
-    background-color: #4caf50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    width: 100%;
-  }
-  
-  .serverResponse {
-    margin-top: 30px;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background-color: #f5f5f5;
-  }
-  
-  .serverResponsePre {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    background-color: #f5f5f5;
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    max-height: 300px;
-    overflow-y: auto;
-    font-family: monospace;
-    line-height: 1.4;
-  }
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.form {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.section {
+  margin-bottom: 25px;
+  padding: 15px;
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #333;
+}
+
+.input {
+  padding: 10px;
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+  font-size: 14px;
+  transition: border-color 0.3s;
+}
+
+.input:focus {
+  border-color: #4caf50;
+  outline: none;
+}
+
+.input-small {
+  width: 80px;
+}
+
+/* Стили для элементов ответов */
+.answerItem,
+.pairItem {
+  border: 1px solid #e0e0e0;
+  padding: 15px;
+  margin-bottom: 15px;
+  position: relative;
+  border-radius: 4px;
+  background-color: #fdfdfd;
+  transition: all 0.2s;
+}
+
+.answerItem:hover,
+.pairItem:hover {
+  border-color: #bdbdbd;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.removeButton {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #e53935;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.removeButton:hover {
+  background-color: #ffebee;
+}
+
+/* Стили для чекбоксов/радио кнопок */
+.answerItem label {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.answerItem input[type="checkbox"],
+.answerItem input[type="radio"] {
+  margin-right: 10px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Стили для кнопок */
+.submitButton {
+  padding: 12px 20px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  width: 100%;
+  transition: background-color 0.3s;
+  margin-top: 10px;
+}
+
+.submitButton:hover {
+  background-color: #43a047;
+}
+
+/* Стили для пар соответствия */
+.pairItem {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.pairItem input {
+  margin-bottom: 0;
+}
+
+.serverResponse {
+  margin-top: 30px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #f5f5f5;
+}
+
+.serverResponsePre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  background-color: #f5f5f5;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  max-height: 300px;
+  overflow-y: auto;
+  font-family: monospace;
+  line-height: 1.4;
+}
+
+/* Дополнительные стили для разделов */
+.section h3 {
+  margin-top: 0;
+  color: #2c3e50;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}

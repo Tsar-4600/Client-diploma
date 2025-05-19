@@ -243,3 +243,83 @@
 .save-test-btn.saving {
   background-color: #ff9800;
 }
+/* Стили для блока с правильными ответами */
+/* Стили для блока с правильными ответами */
+.correct-answers {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 0.9em;
+  color: #495057;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: all 0.2s ease;
+}
+
+.correct-answers:hover {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
+}
+
+.correct-answers strong {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  color: #212529;
+  font-size: 0.95em;
+}
+
+.correct-answers strong::before {
+  content: "✓";
+  display: inline-block;
+  margin-right: 8px;
+  color: #2b8a3e;
+  font-weight: bold;
+}
+
+.correct-answers ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.correct-answers li {
+  word-wrap: break-word;
+  padding: 6px 0;
+  border-bottom: 1px dashed #e9ecef;
+  display: flex;
+  align-items: flex-start;
+}
+
+.correct-answers li:last-child {
+  border-bottom: none;
+}
+
+.correct-answers li::before {
+  content: "•";
+  color: #2b8a3e;
+  font-weight: bold;
+  display: inline-block;
+  width: 1em;
+  margin-right: 8px;
+}
+
+/* Для разных типов вопросов - разные акцентные цвета */
+.question-item[data-type="multichoice"] .correct-answers,
+.question-item[data-type="truefalse"] .correct-answers {
+  border-left: 4px solid #4dabf7;
+}
+
+.question-item[data-type="shortanswer"] .correct-answers,
+.question-item[data-type="numerical"] .correct-answers {
+  border-left: 4px solid #f783ac;
+}
+
+.question-item[data-type="matching"] .correct-answers {
+  border-left: 4px solid #74b816;
+}
+
+.question-item[data-type="essay"] .correct-answers {
+  border-left: 4px solid #fcc419;
+}

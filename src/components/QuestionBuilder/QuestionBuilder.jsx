@@ -1,9 +1,10 @@
-import React, { useState, useReducer } from 'react';
+import React, { useState, useReducer, useEffect } from 'react';
 import './QuestionBuilder.css';
 
 const initialQuestionState = {
   questionType: 'multichoice',
-  name: '',
+  name: '', // Категория (только для выбора темы)
+  theme: '', // Тема (отправляется на сервер)
   questionText: '',
   defaultGrade: 1,
   penalty: 0.33,
@@ -73,6 +74,38 @@ function questionReducer(state, action) {
 const QuestionBuilder = ({ onQuestionAdded }) => {
   const [question, dispatch] = useReducer(questionReducer, initialQuestionState);
   const [serverResponse, setServerResponse] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [themes, setThemes] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Загрузка категорий при монтировании
+  useEffect(() => {
+    setLoading(true);
+    fetch(`${process.env.REACT_APP_SERVER_URL}/api/categories`)
+      .then(res => res.json())
+      .then(data => setCategories(data))
+      .catch(err => console.error('Error loading categories:', err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Загрузка тем при изменении категории
+  useEffect(() => {
+    if (question.name) {
+      setLoading(true);
+      fetch(`${process.env.REACT_APP_SERVER_URL}/api/themes?category=${encodeURIComponent(question.name)}`)
+        .then(res => res.json())
+        .then(data => {
+          setThemes(data);
+          // Сбрасываем выбранную тему при смене категории
+          dispatch({ type: 'SET_FIELD', field: 'theme', value: '' });
+        })
+        .catch(err => console.error('Error loading themes:', err))
+        .finally(() => setLoading(false));
+    } else {
+      setThemes([]);
+      dispatch({ type: 'SET_FIELD', field: 'theme', value: '' });
+    }
+  }, [question.name]);
 
   const handleChange = (field, value) => {
     dispatch({ type: 'SET_FIELD', field, value });
@@ -108,22 +141,46 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!question.theme) {
+      setServerResponse('Ошибка: Необходимо выбрать тему');
+      return;
+    }
+
     try {
-      
+      setLoading(true);
       const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/my-questions/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('jwtToken')}` },
-        body: JSON.stringify({ ...question }),
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${localStorage.getItem('jwtToken')}` 
+        },
+        body: JSON.stringify({ 
+          ...question,
+          // Отправляем только необходимые данные
+          questionText: question.questionText,
+          questionType: question.questionType,
+          theme: question.theme, // Отправляем тему вместо категории
+          answers: question.answers,
+          matchingPairs: question.matchingPairs,
+          essaySettings: question.essaySettings
+        }),
       });
+      
       const result = await response.json();
       setServerResponse(JSON.stringify(result, null, 2));
       
       if (response.ok) {
         onQuestionAdded();
+        // Сбрасываем форму после успешного создания
+        dispatch({ type: 'SET_FIELD', field: 'questionText', value: '' });
+        dispatch({ type: 'SET_FIELD', field: 'theme', value: '' });
       }
 
     } catch (error) {
       setServerResponse('Ошибка: ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -136,10 +193,7 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
             <div className="section">
               <h3>Ответы:</h3>
               {question.answers.map((answer, index) => (
-                <div
-                  key={index}
-                  className="answerItem"
-                >
+                <div key={index} className="answerItem">
                   <button
                     type="button"
                     onClick={() => handleRemoveAnswer(index)}
@@ -349,15 +403,42 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
           </select>
         </div>
 
-        {/* Название */}
+        {/* Категория (только для выбора темы) */}
         <div className="section">
-          <label className="label">Категория вопроса</label>
-          <input
-            type="text"
+          <label className="label">Категория:</label>
+          <select
             value={question.name}
             onChange={(e) => handleChange('name', e.target.value)}
             className="input"
-          />
+            required
+            disabled={loading}
+          >
+            <option value="">Выберите категорию</option>
+            {categories.map((category, index) => (
+              <option key={index} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Тема (отправляется на сервер) */}
+        <div className="section">
+          <label className="label">Тема:</label>
+          <select
+            value={question.theme}
+            onChange={(e) => handleChange('theme', e.target.value)}
+            className="input"
+            required
+            disabled={!question.name || loading}
+          >
+            <option value="">Выберите тему</option>
+            {themes.map((theme, index) => (
+              <option key={index} value={theme}>
+                {theme}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Текст вопроса */}
@@ -368,6 +449,7 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
             onChange={(e) => handleChange('questionText', e.target.value)}
             className="input"
             style={{ minHeight: '100px' }}
+            required
           />
         </div>
 
@@ -385,6 +467,9 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
                 value={question.defaultGrade}
                 onChange={(e) => handleChange('defaultGrade', parseFloat(e.target.value))}
                 className="input"
+                min="0"
+                step="0.1"
+                required
               />
             </div>
             <div>
@@ -395,16 +480,20 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
                 value={question.penalty}
                 onChange={(e) => handleChange('penalty', parseFloat(e.target.value))}
                 className="input"
+                min="0"
+                max="1"
+                required
               />
             </div>
           </div>
         </div>
 
-        <button
-          type="submit"
+        <button 
+          type="submit" 
           className="submitButton"
+          disabled={loading}
         >
-          Создать вопрос
+          {loading ? 'Создание...' : 'Создать вопрос'}
         </button>
       </form>
 

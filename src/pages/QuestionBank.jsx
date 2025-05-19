@@ -16,6 +16,7 @@ const QuestionBank = () => {
   // Разметка, возвращаемая компонентом
   return (
     <div className="QuestionBank">
+      <h1>Банк вопрсов</h1>
       <h2>Мои вопросы</h2>
       <MyQuestionList refreshTrigger={refreshTrigger}  />
       <h2>Создание моего вопроса</h2>
