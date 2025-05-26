@@ -7,7 +7,7 @@ const MoodleQuizBuilder = () => {
   const [categories, setCategories] = useState([]);
   const [themes, setThemes] = useState([]);
   const [loadingThemes, setLoadingThemes] = useState(false);
-  
+
   // Состояния для управления интерфейсом
   const [moodleXml, setMoodleXml] = useState('');
   const [selectedQuestions, setSelectedQuestions] = useState([]);
@@ -39,17 +39,22 @@ const MoodleQuizBuilder = () => {
     try {
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(xml, "text/xml");
-      
-      switch(questionType) {
+
+      switch (questionType) {
         case 'multichoice':
         case 'truefalse':
           const answers = xmlDoc.getElementsByTagName("answer");
           return Array.from(answers)
-            .filter(a => a.getAttribute("fraction") === "100")
+            .filter(a => {
+              const fractionStr = a.getAttribute("fraction");
+              const fractionNum = parseFloat(fractionStr);
+              return fractionStr && fractionNum > 0; // фильтр по fraction > 0
+            })
             .map(a => {
               const text = a.getElementsByTagName("text")[0]?.textContent || "";
               return decodeHtmlEntities(text);
             });
+
 
         case 'shortanswer':
           const shortAnswer = xmlDoc.getElementsByTagName("answer")[0]?.textContent;
@@ -59,7 +64,7 @@ const MoodleQuizBuilder = () => {
           const numericalAnswer = xmlDoc.getElementsByTagName("text")[0]?.textContent;
           const tolerance = xmlDoc.getElementsByTagName("tolerance")[0]?.textContent;
           if (numericalAnswer) {
-            return tolerance 
+            return tolerance
               ? [`${numericalAnswer} (±${tolerance})`]
               : [numericalAnswer];
           }
@@ -130,7 +135,7 @@ const MoodleQuizBuilder = () => {
       setSelectedTheme('');
       return;
     }
-    
+
     setLoadingThemes(true);
     try {
       const response = await fetch(
@@ -148,7 +153,7 @@ const MoodleQuizBuilder = () => {
   // Обработчики фильтров
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (name === 'category') {
       setFilters(prev => ({
         ...prev,
@@ -493,7 +498,7 @@ const MoodleQuizBuilder = () => {
         {/* Банк вопросов */}
         <div className="question-bank">
           <h3>Банк вопросов ({filteredQuestions.length})</h3>
-          <div 
+          <div
             className="question-bank-drop-area"
             onDragOver={handleDragOver}
             onDrop={handleDropFromOutside}

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './AuthForm.css';
 
-const AuthForm = ( { setIsAuthenticated }) => {
+const AuthForm = ( { setIsAuthenticated,  setUserRole }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
@@ -28,11 +28,11 @@ const AuthForm = ( { setIsAuthenticated }) => {
             if (data.success) {
                 localStorage.setItem('jwtToken', data.token);
                 setMessage('Авторизация успешна!');
-
+                
                 if (setIsAuthenticated) {
                     setIsAuthenticated(true);
+                    setUserRole(data.role);
                 }
-
 
                 navigate('/');
             } else {

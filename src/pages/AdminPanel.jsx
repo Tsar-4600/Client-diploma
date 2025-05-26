@@ -1,19 +1,19 @@
 
 import React from 'react';
-import AuthForm from '../components/AuthForm/AuthForm';
+import AdminBoard from '../components/AdminBoard/AdminBoard';
 
 // Определение функционального компонента
-const Auth = ({setIsAuthenticated, setUserRole}) => {
+const AdminPanel = () => {
 
   // Разметка, возвращаемая компонентом
   return (
-    <div className="Auth">
-        <h1>Авторизация</h1>
-        <AuthForm setIsAuthenticated={setIsAuthenticated} setUserRole={setUserRole} />
+    <div className="AdminPanel">
+        <h1>Админская панель</h1>
+        <AdminBoard/>
     </div>
 
   );
 };
 
 // Экспорт компонента для использования в других местах
-export default Auth;
+export default AdminPanel;

@@ -6,10 +6,9 @@ const TestsBankList = ({ refreshKey }) => {
     const [filteredTests, setFilteredTests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [expandedTestId, setExpandedTestId] = useState(null);
     const [categories, setCategories] = useState([]);
     const [themes, setThemes] = useState([]);
-    
-    // Фильтры
     const [filters, setFilters] = useState({
         rating: 0,
         category: '',
@@ -17,8 +16,10 @@ const TestsBankList = ({ refreshKey }) => {
         search: ''
     });
 
+    // Загрузка тестов
     const fetchTests = async () => {
         try {
+            setLoading(true);
             const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/test-bank`, {
                 headers: {
                     'Content-Type': 'application/json',
@@ -31,57 +32,122 @@ const TestsBankList = ({ refreshKey }) => {
             const data = await response.json();
             setTests(data);
             setFilteredTests(data);
-            
+
             // Извлекаем уникальные категории и темы
             const uniqueCategories = [...new Set(data.map(test => test.category_name))];
             const uniqueThemes = [...new Set(data.map(test => test.theme_name))];
-            
+
             setCategories(uniqueCategories);
             setThemes(uniqueThemes);
         } catch (err) {
             setError('Не удалось загрузить тесты');
+            console.error(err);
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        fetchTests();
-    }, [refreshKey]);
+    // Парсинг XML теста (упрощенная версия)
+    const parseTestQuestions = (xmlString) => {
+        try {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+            const questions = Array.from(xmlDoc.getElementsByTagName("question"));
 
-    // Применение фильтров
+            return questions.map(q => {
+                const type = q.getAttribute("type") || 'unknown';
+
+                // Правильное извлечение текста вопроса
+                const questionTextNode = q.getElementsByTagName("questiontext")[0];
+                let questionText = questionTextNode?.textContent || 'Без текста вопроса';
+
+                // Очистка текста от лишних тегов (если они есть)
+                questionText = questionText.replace(/<[^>]+>/g, '').trim();
+
+                // Извлечение названия вопроса (не категории!)
+                const nameNode = q.getElementsByTagName("name")[0];
+                const questionName = nameNode?.textContent || `Вопрос ${type}`;
+
+                return {
+                    type,
+                    name: questionName,
+                    text: questionText // Добавляем текст вопроса
+                };
+            });
+        } catch (e) {
+            console.error('Ошибка парсинга XML:', e);
+            return [];
+        }
+    };
+
+    // Оценка теста
+    const rateTest = async (testId, rating) => {
+        try {
+            const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/rate-test`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
+                },
+                body: JSON.stringify({ id_test: testId, rating }),
+            });
+
+            if (!response.ok) throw new Error('Ошибка при отправке оценки');
+            await fetchTests();
+        } catch (err) {
+            console.error('Ошибка оценки теста:', err);
+            alert('Не удалось отправить оценку');
+        }
+    };
+
+    // Сохранение теста в файл
+    const saveTestToFile = (testName, xmlContent) => {
+        const safeFileName = testName
+            .replace(/[<>:"/\\|?*]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .replace(/ /g, '_');
+
+        const blob = new Blob([xmlContent], { type: 'application/xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${safeFileName || 'test'}.xml`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    // Фильтрация тестов
     useEffect(() => {
         let result = [...tests];
-        
-        // Фильтр по рейтингу
+
         if (filters.rating > 0) {
-            result = result.filter(test => 
+            result = result.filter(test =>
                 Math.floor(parseFloat(test.avg_rating)) >= filters.rating
             );
         }
-        
-        // Фильтр по категории
+
         if (filters.category) {
-            result = result.filter(test => 
+            result = result.filter(test =>
                 test.category_name === filters.category
             );
         }
-        
-        // Фильтр по теме
+
         if (filters.theme) {
-            result = result.filter(test => 
+            result = result.filter(test =>
                 test.theme_name === filters.theme
             );
         }
-        
-        // Поиск по названию
+
         if (filters.search) {
             const searchTerm = filters.search.toLowerCase();
-            result = result.filter(test => 
+            result = result.filter(test =>
                 test.test_name.toLowerCase().includes(searchTerm)
             );
         }
-        
+
         setFilteredTests(result);
     }, [filters, tests]);
 
@@ -102,30 +168,21 @@ const TestsBankList = ({ refreshKey }) => {
         });
     };
 
-    const rateTest = async (testId, rating) => {
-        try {
-            const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/rate-test`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
-                },
-                body: JSON.stringify({ id_test: testId, rating }),
-            });
-            if (!response.ok) throw new Error('Ошибка при отправке оценки');
-            await fetchTests();
-        } catch (err) {
-            alert('Не удалось отправить оценку');
-        }
+    const toggleTestExpansion = (testId) => {
+        setExpandedTestId(expandedTestId === testId ? null : testId);
     };
 
-    if (loading) return <div className="loading">Загрузка...</div>;
+    useEffect(() => {
+        fetchTests();
+    }, [refreshKey]);
+
+    if (loading) return <div className="loading">Загрузка тестов...</div>;
     if (error) return <div className="error-message">{error}</div>;
 
     return (
         <div className="tests-bank-container">
-            <h2>Все тесты</h2>
-            
+            <h2>Банк тестов</h2>
+
             {/* Панель фильтрации */}
             <div className="filter-panel">
                 <div className="filter-group">
@@ -144,7 +201,7 @@ const TestsBankList = ({ refreshKey }) => {
                         <option value="1">1 ★ и выше</option>
                     </select>
                 </div>
-                
+
                 <div className="filter-group">
                     <label htmlFor="category-filter">Категория:</label>
                     <select
@@ -160,7 +217,7 @@ const TestsBankList = ({ refreshKey }) => {
                         ))}
                     </select>
                 </div>
-                
+
                 <div className="filter-group">
                     <label htmlFor="theme-filter">Тема:</label>
                     <select
@@ -176,7 +233,7 @@ const TestsBankList = ({ refreshKey }) => {
                         ))}
                     </select>
                 </div>
-                
+
                 <div className="filter-group">
                     <label htmlFor="search-filter">Поиск:</label>
                     <input
@@ -189,11 +246,11 @@ const TestsBankList = ({ refreshKey }) => {
                         className="search-input"
                     />
                 </div>
-                
+
                 <button onClick={resetFilters} className="reset-filters-btn">
                     Сбросить фильтры
                 </button>
-                
+
                 <div className="results-count">
                     Найдено тестов: {filteredTests.length}
                 </div>
@@ -206,34 +263,73 @@ const TestsBankList = ({ refreshKey }) => {
                 ) : (
                     filteredTests.map(test => (
                         <div key={test.id_test} className="test-card">
-                            <h3 className="test-title">{test.test_name}</h3>
+                            <div
+                                className="test-header"
+                                onClick={() => toggleTestExpansion(test.id_test)}
+                            >
+                                <h3>{test.test_name}</h3>
+                                <span className="toggle-icon">
+                                    {expandedTestId === test.id_test ? '▼' : '▶'}
+                                </span>
+                            </div>
 
-                            <div className="test-info">
-                                <p><strong>Автор:</strong> {test.username}</p>
-                                <p><strong>Категория:</strong> {test.category_name}</p>
-                                <p><strong>Тема:</strong> {test.theme_name}</p>
-                                <p>
-                                    <strong>Рейтинг:</strong>
+                            {expandedTestId === test.id_test && (
+                                <div className="test-details">
+                                    {test.xml ? (
+                                        (() => {
+                                            const questions = parseTestQuestions(test.xml);
+                                            return questions.length > 0 ? (
+                                                <div className="questions-list">
+                                                    <h4>Вопросы ({questions.length}):</h4>
+                                                    <ul>
+                                                        {questions.map((question, idx) => (
+                                                            <li key={idx} className="question-item">
+                                                                <div className="question-header">
+                                                                    <span className="question-type-badge">{question.type}</span>
+                                                                </div>
+                                                                <div className="question-text">{question.text}</div>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            ) : (
+                                                <p>Не удалось распознать вопросы в тесте</p>
+                                            );
+                                        })()
+                                    ) : (
+                                        <p>Тест не содержит XML данных</p>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="test-footer">
+                                <div className="rating-info">
                                     <span className={`rating-value ${getRatingColorClass(test.avg_rating)}`}>
                                         {parseFloat(test.avg_rating).toFixed(1)} ★
                                     </span>
-                                </p>
-                            </div>
+                                    <span>({test.rating_count} оценок)</span>
+                                </div>
 
-                            <div className="rating-control">
-                                <label htmlFor={`rating-${test.id_test}`}>Оценить:</label>
-                                <select
-                                    id={`rating-${test.id_test}`}
-                                    value={test.avg_rating}
-                                    onChange={(e) => rateTest(test.id_test, parseFloat(e.target.value))}
-                                    className="rating-select"
-                                >
-                                    <option value="1">1 ★</option>
-                                    <option value="2">2 ★★</option>
-                                    <option value="3">3 ★★★</option>
-                                    <option value="4">4 ★★★★</option>
-                                    <option value="5">5 ★★★★★</option>
-                                </select>
+                                <div className="test-actions">
+                                    <select
+                                        value={Math.round(test.avg_rating)}
+                                        onChange={(e) => rateTest(test.id_test, parseInt(e.target.value))}
+                                        className="rating-select"
+                                    >
+                                        <option value="1">1 ★</option>
+                                        <option value="2">2 ★★</option>
+                                        <option value="3">3 ★★★</option>
+                                        <option value="4">4 ★★★★</option>
+                                        <option value="5">5 ★★★★★</option>
+                                    </select>
+
+                                    <button
+                                        onClick={() => saveTestToFile(test.test_name, test.xml)}
+                                        className="save-test-btn"
+                                    >
+                                        Скачать
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))

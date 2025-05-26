@@ -3,8 +3,8 @@ import './QuestionBuilder.css';
 
 const initialQuestionState = {
   questionType: 'multichoice',
-  name: '', // Категория (только для выбора темы)
-  theme: '', // Тема (отправляется на сервер)
+  name: '',
+  theme: '',
   questionText: '',
   defaultGrade: 1,
   penalty: 0.33,
@@ -28,44 +28,67 @@ const initialQuestionState = {
 function questionReducer(state, action) {
   switch (action.type) {
     case 'SET_FIELD':
+      if (action.field === 'questionType') {
+        const newState = { 
+          ...state, 
+          [action.field]: action.value,
+          answers: action.value === 'truefalse' 
+            ? [{ text: 'True', isCorrect: false }, { text: 'False', isCorrect: false }]
+            : [{ text: '', isCorrect: false }],
+          single: true,
+          shuffleAnswers: action.value !== 'truefalse'
+        };
+        return newState;
+      }
       return { ...state, [action.field]: action.value };
+
     case 'SET_ANSWER':
       const newAnswers = [...state.answers];
-      newAnswers[action.index][action.field] = action.value;
+      newAnswers[action.index] = { ...newAnswers[action.index], [action.field]: action.value };
       return { ...state, answers: newAnswers };
+
     case 'ADD_ANSWER':
+      if (state.questionType === 'truefalse') return state;
       return { ...state, answers: [...state.answers, { text: '', isCorrect: false }] };
+
     case 'REMOVE_ANSWER':
+      if (state.questionType === 'truefalse' || state.answers.length <= 1) return state;
       return {
         ...state,
         answers: state.answers.filter((_, i) => i !== action.index),
       };
+
     case 'SET_CORRECT':
-      const answers = [...state.answers];
-      if (state.single) {
-        answers.forEach((ans, i) => {
-          ans.isCorrect = i === action.index ? action.checked : false;
-        });
-      } else {
-        answers[action.index].isCorrect = action.checked;
-      }
-      return { ...state, answers };
+      return {
+        ...state,
+        answers: state.answers.map((answer, i) => ({
+          ...answer,
+          isCorrect: state.single || state.questionType === 'truefalse'
+            ? i === action.index && action.checked
+            : i === action.index ? action.checked : answer.isCorrect
+        }))
+      };
+
     case 'SET_MATCHING_PAIR':
       const pairs = [...state.matchingPairs];
-      pairs[action.index][action.field] = action.value;
+      pairs[action.index] = { ...pairs[action.index], [action.field]: action.value };
       return { ...state, matchingPairs: pairs };
+
     case 'ADD_MATCHING_PAIR':
       return { ...state, matchingPairs: [...state.matchingPairs, { question: '', answer: '' }] };
+
     case 'REMOVE_MATCHING_PAIR':
       return {
         ...state,
         matchingPairs: state.matchingPairs.filter((_, i) => i !== action.index),
       };
+
     case 'SET_ESSAY':
       return {
         ...state,
         essaySettings: { ...state.essaySettings, [action.field]: action.value },
       };
+
     default:
       return state;
   }
@@ -77,8 +100,8 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
   const [categories, setCategories] = useState([]);
   const [themes, setThemes] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState([]);
 
-  // Загрузка категорий при монтировании
   useEffect(() => {
     setLoading(true);
     fetch(`${process.env.REACT_APP_SERVER_URL}/api/categories`)
@@ -88,7 +111,6 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
       .finally(() => setLoading(false));
   }, []);
 
-  // Загрузка тем при изменении категории
   useEffect(() => {
     if (question.name) {
       setLoading(true);
@@ -96,7 +118,6 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
         .then(res => res.json())
         .then(data => {
           setThemes(data);
-          // Сбрасываем выбранную тему при смене категории
           dispatch({ type: 'SET_FIELD', field: 'theme', value: '' });
         })
         .catch(err => console.error('Error loading themes:', err))
@@ -106,6 +127,39 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
       dispatch({ type: 'SET_FIELD', field: 'theme', value: '' });
     }
   }, [question.name]);
+
+  const validateForm = () => {
+    const newErrors = [];
+
+    if (!question.questionText.trim()) {
+      newErrors.push('Текст вопроса обязателен');
+    }
+
+    if (!question.theme) {
+      newErrors.push('Необходимо выбрать тему');
+    }
+
+    if (question.questionType === 'truefalse') {
+      const correctAnswers = question.answers.filter(a => a.isCorrect).length;
+      if (correctAnswers !== 1) {
+        newErrors.push('Для вопроса True/False должен быть выбран один правильный ответ');
+      }
+    } else if (question.questionType === 'multichoice') {
+      if (question.answers.some(a => !a.text.trim())) {
+        newErrors.push('Все ответы должны содержать текст');
+      }
+
+      const correctAnswers = question.answers.filter(a => a.isCorrect).length;
+      if (correctAnswers === 0) {
+        newErrors.push('Должен быть хотя бы один правильный ответ');
+      } else if (question.single && correctAnswers > 1) {
+        newErrors.push('Для вопроса с одним правильным ответом выберите только один вариант');
+      }
+    }
+
+    setErrors(newErrors);
+    return newErrors.length === 0;
+  };
 
   const handleChange = (field, value) => {
     dispatch({ type: 'SET_FIELD', field, value });
@@ -142,8 +196,7 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!question.theme) {
-      setServerResponse('Ошибка: Необходимо выбрать тему');
+    if (!validateForm()) {
       return;
     }
 
@@ -155,16 +208,7 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
           'Content-Type': 'application/json', 
           'Authorization': `Bearer ${localStorage.getItem('jwtToken')}` 
         },
-        body: JSON.stringify({ 
-          ...question,
-          // Отправляем только необходимые данные
-          questionText: question.questionText,
-          questionType: question.questionType,
-          theme: question.theme, // Отправляем тему вместо категории
-          answers: question.answers,
-          matchingPairs: question.matchingPairs,
-          essaySettings: question.essaySettings
-        }),
+        body: JSON.stringify(question),
       });
       
       const result = await response.json();
@@ -172,11 +216,9 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
       
       if (response.ok) {
         onQuestionAdded();
-        // Сбрасываем форму после успешного создания
         dispatch({ type: 'SET_FIELD', field: 'questionText', value: '' });
         dispatch({ type: 'SET_FIELD', field: 'theme', value: '' });
       }
-
     } catch (error) {
       setServerResponse('Ошибка: ' + error.message);
     } finally {
@@ -187,7 +229,6 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
   const renderQuestionFields = () => {
     switch (question.questionType) {
       case 'multichoice':
-      case 'truefalse':
         return (
           <>
             <div className="section">
@@ -198,6 +239,7 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
                     type="button"
                     onClick={() => handleRemoveAnswer(index)}
                     className="removeButton"
+                    disabled={question.answers.length <= 1}
                   >
                     ×
                   </button>
@@ -249,6 +291,45 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
             </div>
           </>
         );
+
+      case 'truefalse':
+        return (
+          <>
+            <div className="section">
+              <h3>Ответы:</h3>
+              {question.answers.map((answer, index) => (
+                <div key={index} className="answerItem">
+                  <input
+                    type="text"
+                    value={answer.text}
+                    className="input"
+                    readOnly
+                  />
+                  <label>
+                    <input
+                      type="radio"
+                      checked={answer.isCorrect}
+                      onChange={(e) => handleCorrectChange(index, e.target.checked)}
+                      name="correctAnswer"
+                    />
+                    Правильный
+                  </label>
+                </div>
+              ))}
+            </div>
+            <div className="section">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={false}
+                  disabled
+                />
+                Перемешивание ответов недоступно для True/False
+              </label>
+            </div>
+          </>
+        );
+
       case 'shortanswer':
         return (
           <div className="section">
@@ -261,6 +342,7 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
             />
           </div>
         );
+
       case 'numerical':
         return (
           <div className="section">
@@ -282,6 +364,7 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
             </label>
           </div>
         );
+
       case 'matching':
         return (
           <div className="section">
@@ -320,6 +403,7 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
             </button>
           </div>
         );
+
       case 'essay':
         return (
           <div className="section">
@@ -378,6 +462,7 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
             </div>
           </div>
         );
+
       default:
         return null;
     }
@@ -386,7 +471,6 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
   return (
     <div className="container">
       <form onSubmit={handleSubmit} className="form">
-        {/* Тип вопроса */}
         <div className="section">
           <label className="label">Тип вопроса:</label>
           <select
@@ -403,7 +487,6 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
           </select>
         </div>
 
-        {/* Категория (только для выбора темы) */}
         <div className="section">
           <label className="label">Категория:</label>
           <select
@@ -422,7 +505,6 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
           </select>
         </div>
 
-        {/* Тема (отправляется на сервер) */}
         <div className="section">
           <label className="label">Тема:</label>
           <select
@@ -441,7 +523,6 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
           </select>
         </div>
 
-        {/* Текст вопроса */}
         <div className="section">
           <label className="label">Текст вопроса:</label>
           <textarea
@@ -453,10 +534,8 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
           />
         </div>
 
-        {/* Поля для типа вопроса */}
         {renderQuestionFields()}
 
-        {/* Общие настройки */}
         <div className="section">
           <h3 className="section">Общие настройки:</h3>
           <div style={{ display: 'flex', gap: '20px', marginBottom: '10px' }}>
@@ -488,6 +567,17 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
           </div>
         </div>
 
+        {errors.length > 0 && (
+          <div className="error-messages">
+            <h3>Ошибки:</h3>
+            <ul>
+              {errors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <button 
           type="submit" 
           className="submitButton"
@@ -497,7 +587,6 @@ const QuestionBuilder = ({ onQuestionAdded }) => {
         </button>
       </form>
 
-      {/* Ответ сервера */}
       {serverResponse && (
         <div className="serverResponse">
           <h3>Ответ сервера:</h3>

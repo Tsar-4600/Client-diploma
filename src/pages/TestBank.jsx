@@ -11,7 +11,6 @@ const TestBank = () => {
 
     return (
         <div className="TestBank">
-          <h1>Банк тестов</h1>
             <TestsBankList refreshKey={refreshKey} />
             <MyTestList onActionComplete={handleRefresh} />
         </div>
