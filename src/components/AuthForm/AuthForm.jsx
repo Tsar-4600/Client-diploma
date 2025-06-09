@@ -3,16 +3,46 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './AuthForm.css';
 
-const AuthForm = ( { setIsAuthenticated,  setUserRole }) => {
+const AuthForm = ({ setIsAuthenticated, setUserRole }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
+    const [errors, setErrors] = useState({
+        username: '',
+        password: ''
+    });
 
     const navigate = useNavigate();
 
+    const validateForm = () => {
+        let valid = true;
+        const newErrors = {
+            username: '',
+            password: ''
+        };
+
+        if (!username.trim()) {
+            newErrors.username = 'Имя пользователя обязательно';
+            valid = false;
+        }
+
+        if (!password.trim()) {
+            newErrors.password = 'Пароль обязателен';
+            valid = false;
+        }
+
+        setErrors(newErrors);
+        return valid;
+    };
+
     const handleSubmit = async (event) => {
-        event.preventDefault(); // предотвращаем перезагрузку страницы
+        event.preventDefault();
         
+        // Валидация перед отправкой
+        if (!validateForm()) {
+            return;
+        }
+
         try {
             const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/login`, {
                 method: 'POST',
@@ -24,7 +54,6 @@ const AuthForm = ( { setIsAuthenticated,  setUserRole }) => {
 
             const data = await response.json();
        
-            // Обработка успешного ответа
             if (data.success) {
                 localStorage.setItem('jwtToken', data.token);
                 setMessage('Авторизация успешна!');
@@ -53,7 +82,9 @@ const AuthForm = ( { setIsAuthenticated,  setUserRole }) => {
                         type="text"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
+                        className={errors.username ? 'error' : ''}
                     />
+                    {errors.username && <span className="error-message">{errors.username}</span>}
                 </div>
                 <div>
                     <label>Пароль:</label>
@@ -61,11 +92,13 @@ const AuthForm = ( { setIsAuthenticated,  setUserRole }) => {
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        className={errors.password ? 'error' : ''}
                     />
+                    {errors.password && <span className="error-message">{errors.password}</span>}
                 </div>
                 <button type="submit">Войти</button>
             </form>
-            {message && <p>{message}</p>}
+            {message && <p className="message">{message}</p>}
         </div>
     );
 };

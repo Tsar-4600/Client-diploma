@@ -114,3 +114,46 @@
 .reg-form .shake-animation {
   animation: shake 0.4s ease-in-out;
 }
+/* Стили для полей с ошибками */
+.reg-form .error-field {
+  border-color: var(--error-red) !important;
+  animation: shake 0.4s ease-in-out;
+}
+
+.reg-form .error-field:focus {
+  box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.2) !important;
+}
+
+/* Стили для сообщений об ошибках */
+.reg-form .error-message {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  color: var(--error-red);
+  font-size: 0.85rem;
+  background-color: rgba(244, 67, 54, 0.05);
+  border-radius: 4px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Улучшенные стили для сообщений формы */
+.reg-form .success-message {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  border-radius: 6px;
+  text-align: center;
+  animation: fadeIn 0.3s ease-out;
+  background-color: rgba(76, 175, 80, 0.1);
+  color: var(--success-green);
+  border: 1px solid var(--success-green);
+}
+
+.reg-form .error-message-container {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  border-radius: 6px;
+  text-align: center;
+  animation: fadeIn 0.3s ease-out;
+  background-color: rgba(244, 67, 54, 0.1);
+  color: var(--error-red);
+  border: 1px solid var(--error-red);
+}
